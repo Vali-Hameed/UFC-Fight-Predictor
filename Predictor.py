@@ -32,7 +32,7 @@ X.loc[:, numerical_features] = X[numerical_features].fillna(numerical_medians)
 # fill all categorical columns at once
 X.loc[:, categorical_features] = X[categorical_features].fillna('Unknown')
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 preprocessor = ColumnTransformer(
     transformers=[
@@ -154,5 +154,5 @@ def predict_hypothetical_fight(red_fighter_name, blue_fighter_name, model, dataf
 
 
 # Example hypothetical fight prediction
-predict_hypothetical_fight('Lerone Murphy', 'Josh Emmett', model_pipeline, df, numerical_features + categorical_features)
+predict_hypothetical_fight('Tom Aspinall', 'Jon Jones', model_pipeline, df, numerical_features + categorical_features)
 
