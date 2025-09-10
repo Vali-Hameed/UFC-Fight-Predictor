@@ -41,12 +41,12 @@ preprocessor = ColumnTransformer(
     ])
 model_pipeline = Pipeline(steps=[('preprocessor', preprocessor),
                                ('classifier', LogisticRegression(max_iter=1000, random_state=42))])
-# --- 6. Training the Model ---
+# ---  Training the Model ---
 print("Training the logistic regression model...")
 model_pipeline.fit(X_train, y_train)
 print("Training complete.")
 
-# --- 7. Evaluating the Model ---
+# ---  Evaluating the Model ---
 print("\n--- Model Evaluation ---")
 y_pred = model_pipeline.predict(X_test)
 
@@ -57,4 +57,17 @@ print(f"Model Accuracy: {accuracy:.4f}")
 # Print the classification report for more detailed metrics
 print("\nClassification Report:")
 print(classification_report(y_test, y_pred, target_names=['Blue Wins', 'Red Wins']))
+
+# Print the confusion matrix to see true vs. predicted outcomes
+print("\nConfusion Matrix:")
+# [[True Negative, False Positive], [False Negative, True Positive]]
+cm = confusion_matrix(y_test, y_pred)
+print(cm)
+
+# Interpretation of Confusion Matrix
+print("\nConfusion Matrix Interpretation:")
+print(f"Correctly predicted 'Blue Wins': {cm[0][0]}")
+print(f"Incorrectly predicted 'Red Wins' (False Positive): {cm[0][1]}")
+print(f"Incorrectly predicted 'Blue Wins' (False Negative): {cm[1][0]}")
+print(f"Correctly predicted 'Red Wins': {cm[1][1]}")
 
