@@ -33,7 +33,7 @@ To run the predictor and see the model's accuracy, execute the Predictor.py scri
 ```
 python Predictor.py
 ```
-Change this line to predict different fights:
+Change the names in this line to predict different fights:
 ```
 predict_hypothetical_fight('Tom Aspinall', 'Jon Jones', model_pipeline, df, numerical_features + categorical_features)
 ```
