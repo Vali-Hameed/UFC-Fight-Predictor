@@ -1,7 +1,7 @@
 # 🥊 UFC Fight Predictor
 A machine learning project that predicts the winner of UFC fights based on historical data. This tool utilizes a logistic regression model to analyze various fighter and match statistics, offering insights into potential fight outcomes.
 
-### 🚀 Features
+## ✨ Features
 * Fight Winner Prediction: Predicts the winner of a UFC match (Red or Blue corner).
 
 * Data-Driven: Uses a comprehensive dataset of past UFC fights (ufc-master.csv).
@@ -10,7 +10,7 @@ A machine learning project that predicts the winner of UFC fights based on histo
 
 * Feature Importance: Identifies key features that are most predictive of a fight's outcome.
 
-## Getting Started
+## 🚀 Getting Started
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
 ### Prerequisites
