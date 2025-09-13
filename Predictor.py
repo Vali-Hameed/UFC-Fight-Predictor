@@ -156,7 +156,7 @@ def predict_hypothetical_fight(red_fighter_name, blue_fighter_name, model, dataf
     print(f"\nPredicted Winner: {winner}")
 
 
-# Example hypothetical fight prediction
+# Example hypothetical fight prediction for fight night lopes vs silva
 predict_hypothetical_fight('Santiago Luna', 'Lee Quang', model_pipeline, df, numerical_features + categorical_features)
 predict_hypothetical_fight('Alexander Hernandez', 'Diego Ferreira', model_pipeline, df, numerical_features + categorical_features)
 predict_hypothetical_fight('Kelvin Gastelum', 'Dustin Stoltzfus', model_pipeline, df, numerical_features + categorical_features)
