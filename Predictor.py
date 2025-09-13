@@ -5,6 +5,8 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+import joblib
+import pickle
 
 try:
     df = pd.read_csv('ufc-master.csv')
@@ -32,7 +34,7 @@ X.loc[:, numerical_features] = X[numerical_features].fillna(numerical_medians)
 # fill all categorical columns at once
 X.loc[:, categorical_features] = X[categorical_features].fillna('Unknown')
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.6, random_state=42)
 
 preprocessor = ColumnTransformer(
     transformers=[
@@ -45,7 +47,8 @@ model_pipeline = Pipeline(steps=[('preprocessor', preprocessor),
 print("Training the logistic regression model...")
 model_pipeline.fit(X_train, y_train)
 print("Training complete.")
-
+tModel=model_pipeline
+joblib.dump(tModel, 'ufc_logistic_model.pkl')
 # ---  Evaluating the Model ---
 print("\n--- Model Evaluation ---")
 y_pred = model_pipeline.predict(X_test)
@@ -154,5 +157,10 @@ def predict_hypothetical_fight(red_fighter_name, blue_fighter_name, model, dataf
 
 
 # Example hypothetical fight prediction
-predict_hypothetical_fight('Tom Aspinall', 'Jon Jones', model_pipeline, df, numerical_features + categorical_features)
+predict_hypothetical_fight('Santiago Luna', 'Lee Quang', model_pipeline, df, numerical_features + categorical_features)
+predict_hypothetical_fight('Alexander Hernandez', 'Diego Ferreira', model_pipeline, df, numerical_features + categorical_features)
+predict_hypothetical_fight('Kelvin Gastelum', 'Dustin Stoltzfus', model_pipeline, df, numerical_features + categorical_features)
+predict_hypothetical_fight('Rafa Garcia', 'Jared Gordon', model_pipeline, df, numerical_features + categorical_features)
+predict_hypothetical_fight('Rob Font', 'David Martinez', model_pipeline, df, numerical_features + categorical_features)
+predict_hypothetical_fight('Diego Lopes', 'Jean Silva', model_pipeline, df, numerical_features + categorical_features)
 
