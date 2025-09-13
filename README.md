@@ -1,16 +1,16 @@
 # 🥊 UFC Fight Predictor
 A machine learning project that predicts the winner of UFC fights based on historical data. This tool utilizes a logistic regression model to analyze various fighter and match statistics, offering insights into potential fight outcomes.
 
-### 🚀 Features
-* Fight Winner Prediction: Predicts the winner of a UFC match (Red or Blue corner).
+## ✨ Features
+* **Fight Winner Prediction:** Predicts the winner of a UFC match (Red or Blue corner).
 
-* Data-Driven: Uses a comprehensive dataset of past UFC fights (ufc-master.csv).
+* **Data-Driven:** Uses a comprehensive dataset of past UFC fights (ufc-master.csv).
 
-* Model Evaluation: Includes model accuracy, a classification report, and a confusion matrix to evaluate performance.
+* **Model Evaluation:** Includes model accuracy, a classification report, and a confusion matrix to evaluate performance.
 
-* Feature Importance: Identifies key features that are most predictive of a fight's outcome.
+* **Feature Importance:** Identifies key features that are most predictive of a fight's outcome.
 
-## Getting Started
+## 🚀 Getting Started
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
 ### Prerequisites
@@ -33,27 +33,27 @@ To run the predictor and see the model's accuracy, execute the Predictor.py scri
 ```
 python Predictor.py
 ```
-Change this line to predict different fights:
+Change the names in this line to predict different fights:
 ```
 predict_hypothetical_fight('Tom Aspinall', 'Jon Jones', model_pipeline, df, numerical_features + categorical_features)
 ```
 ## 📊 The Data
 The model is trained on the ufc-master.csv dataset, which contains detailed statistics for each fighter in every match, including:
 
-* Physical Attributes: Age, height, reach, and weight.
+* **Physical Attributes:** Age, height, reach, and weight.
 
-* Performance Metrics: Win streaks, losses, knockouts, submissions, and average significant strikes landed.
+* **Performance Metrics:** Win streaks, losses, knockouts, submissions, and average significant strikes landed.
 
-* Betting Odds: Odds for both the Red and Blue corner fighters.
+* **Betting Odds:** Odds for both the Red and Blue corner fighters.
 
 ## 🤖 The Model
 This project uses a Logistic Regression model from the scikit-learn library to classify fight outcomes.
 
-* Data Preprocessing: The model handles categorical features with one-hot encoding and scales numerical features using StandardScaler to ensure they are appropriately weighted.
+* **Data Preprocessing:** The model handles categorical features with one-hot encoding and scales numerical features using StandardScaler to ensure they are appropriately weighted.
 
-* Training: The dataset is split into training (50%) and testing (50%) sets to train and then evaluate the model on unseen data.
+* **Training:** The dataset is split into training (50%) and testing (50%) sets to train and then evaluate the model on unseen data.
 
-* Evaluation: The model's performance is measured using its accuracy score, a detailed classification report, and a confusion matrix.
+* **Evaluation:** The model's performance is measured using its accuracy score, a detailed classification report, and a confusion matrix.
 ### Result with 50/50 train/test split
 ```
 --- Model Evaluation ---
