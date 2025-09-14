@@ -1,3 +1,5 @@
+![UFC Logo](https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/UFC_Logo.svg/2560px-UFC_Logo.svg.png)
+
 # 🥊 UFC Fight Predictor
 A machine learning project that predicts the winner of UFC fights based on historical data. This tool utilizes a logistic regression model to analyze various fighter and match statistics, offering insights into potential fight outcomes.
 
@@ -120,6 +122,18 @@ Prediction Probabilities:
 
 Predicted Winner: Tom Aspinall
 ```
+## Model Performance
+
+The model was evaluated against the real-world results of **Noche UFC: Lopes vs. Silva**. It correctly predicted 3 out of the 4 fights it had sufficient data for, achieving **75% accuracy** on this event.
+
+| Matchup                              | Predicted Winner      | Actual Winner         | Result      |
+| ------------------------------------ | --------------------- | --------------------- | ----------- |
+| Alexander Hernandez vs. Diego Ferreira | Alexander Hernandez   | **Alexander Hernandez** | ✅ Correct   |
+| Kelvin Gastelum vs. Dustin Stoltzfus   | Kelvin Gastelum       | **Kelvin Gastelum** | ✅ Correct   |
+| Rafa Garcia vs. Jared Gordon         | Rafa Garcia           | **Rafa Garcia** | ✅ Correct   |
+| Diego Lopes vs. Jean Silva           | Jean Silva            | **Diego Lopes** | ❌ Incorrect |
+
+> **Note**: The model could not predict some fights from the card because the fighters were not present in the `ufc-master.csv` dataset (Santiago Luna, Jean Silva, Lee Quang and David Martinez made their debut fight so no past ufc data).
 
 ## 🤝 Contributing
 Contributions make the open-source community an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
