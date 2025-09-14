@@ -48,7 +48,17 @@ print("Training the logistic regression model...")
 model_pipeline.fit(X_train, y_train)
 print("Training complete.")
 tModel=model_pipeline
-joblib.dump(tModel, 'ufc_logistic_model.pkl')
+other_artifacts = {
+        "numerical_features": numerical_features,
+        "categorical_features": categorical_features,
+        "data_for_lookups": df
+    }
+with open('ufc_logistic_model.pkl','wb') as f_model:
+    pickle.dump(tModel, f_model)
+
+with open('ufc_other_artifacts.pkl','wb') as f_artifacts:
+    pickle.dump(other_artifacts, f_artifacts)
+
 # ---  Evaluating the Model ---
 print("\n--- Model Evaluation ---")
 y_pred = model_pipeline.predict(X_test)
@@ -154,6 +164,13 @@ def predict_hypothetical_fight(red_fighter_name, blue_fighter_name, model, dataf
     print(f"  - {blue_fighter_name} (Blue) wins: {blue_win_prob:.2%}")
     print(f"  - {red_fighter_name} (Red) wins: {red_win_prob:.2%}")
     print(f"\nPredicted Winner: {winner}")
+    return {
+        "predicted_winner": winner,
+        "red_win_prob": float(red_win_prob),
+        "blue_win_prob": float(blue_win_prob),
+        "red_fighter": red_fighter_name,
+        "blue_fighter": blue_fighter_name
+    }
 
 
 # Example hypothetical fight prediction for fight night lopes vs silva
