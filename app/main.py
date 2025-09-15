@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 import uvicorn
 import pickle
-from ufc_predictor import predict_hypothetical_fight
+from .ufc_predictor import predict_hypothetical_fight
 
 app = FastAPI(title="UFC Fight Predictor API")
 pickle_in = open('ufc_logistic_model.pkl', 'rb')
