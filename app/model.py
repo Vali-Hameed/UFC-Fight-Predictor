@@ -7,7 +7,7 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 import pickle
 import pandas as pd
 try:
-    df = pd.read_csv('app\ufc-master.csv')
+    df = pd.read_csv('ufc-master.csv')
 except FileNotFoundError:
     print("Error: 'ufc-master.csv' not found. Please ensure the file is in the correct directory.")
     exit()

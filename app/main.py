@@ -4,7 +4,7 @@ import pickle
 from .ufc_predictor import predict_hypothetical_fight
 
 app = FastAPI(title="UFC Fight Predictor API")
-pickle_in = open('ufc_logistic_model.pkl', 'rb')
+pickle_in = open('app/ufc_logistic_model.pkl', 'rb')
 model = pickle.load(pickle_in)
 
 @app.get("/")
@@ -15,7 +15,7 @@ def read_root():
 @app.post("/predict")
 def predict(red_fighter_name: str, blue_fighter_name: str):
     try:
-        with open('ufc_other_artifacts.pkl', 'rb') as f:
+        with open('app/ufc_other_artifacts.pkl', 'rb') as f:
             other_artifacts = pickle.load(f)
         dataframe = other_artifacts['data_for_lookups']
         feature_cols = other_artifacts['categorical_features'] + other_artifacts['numerical_features']
