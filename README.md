@@ -1,9 +1,10 @@
 ![UFC Logo](https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/UFC_Logo.svg/2560px-UFC_Logo.svg.png)
 
 # 🥊 UFC Fight Predictor
-A machine learning project that predicts the winner of UFC fights based on historical data. This tool utilizes a logistic regression model to analyze various fighter and match statistics, offering insights into potential fight outcomes.
+A machine learning project that predicts the winner of UFC fights using a **Logistic Regression model**.The model is served via a **RESTful API** built with **FastAPI**, containerized with **Docker**, and deployed on **AWS ECS** for scalable performance.
 
 ## ✨ Features
+* **RESTful API:** Exposes the prediction model through an API built with FastAPI.
 * **Fight Winner Prediction:** Predicts the winner of a UFC match (Red or Blue corner).
 
 * **Data-Driven:** Uses a comprehensive dataset of past UFC fights (ufc-master.csv).
@@ -35,6 +36,12 @@ Navigate into the project directory:
 cd ufc-fight-predictor
 ```
 ### Usage
+#### Running the API Server
+To serve the model via the FastAPI application, run the following command from the root directory:
+```
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+You can then access the interactive API documentation at http://localhost:8000/docs.
 To run the predictor and see the model's accuracy, execute the ufc_predictor.py script:
 ```
 python app/ufc_predictor.py
@@ -48,9 +55,9 @@ To build the Docker image for the application:
 ```
 docker build -t ufc-fight-predictor .
 ```
-To run the Docker container locally:
+To run the Docker container locally and expose the API:
 ```
-docker run ufc-fight-predictor
+docker run -p 8000:8000 ufc-fight-predictor
 ```
 To push the image to Docker Hub (replace your-dockerhub-username with your actual username):
 ```
@@ -64,10 +71,9 @@ This project has been successfully deployed as a Docker container on AWS Elastic
 
 2. **Set up an ECS Cluster:** An ECS cluster was created in the AWS Management Console to manage and run the containerized application.
 
-3. **Create a Task Definition:** A task definition was configured for the application. This definition specified the Docker image to use (from the Docker Hub repository), along with required resources like CPU and memory.
+3. **Create a Task Definition:** A task definition was configured for the application. This specifies the Docker image, **configures port mappings to expose the API**, and sets required resources.
 
-4. **Run the Task:** The task was then run on the ECS cluster. ECS handles the orchestration, pulling the specified Docker image from Docker Hub and running it as a container.
-
+4. **Run the Task:** The task was then run on the ECS cluster. which pulls the image and runs it as a container, making the API accessible.
 This deployment method leverages AWS-managed infrastructure, making it a scalable and robust way to run containerized applications
 ## 📊 The Data
 The model is trained on the ufc-master.csv dataset, which contains detailed statistics for each fighter in every match, including:
