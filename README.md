@@ -12,13 +12,17 @@ A machine learning project that predicts the winner of UFC fights based on histo
 
 * **Feature Importance:** Identifies key features that are most predictive of a fight's outcome.
 
+* **Containerized Deployment:** Packaged as a Docker container for easy portability and deployment.
+
+* **Cloud Deployment:** Successfully deployed and running on AWS ECS.
+
 ## 🚀 Getting Started
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
 ### Prerequisites
-You'll need to have Python 3 and pip installed. You can install the necessary Python libraries using the following command:
+You'll need to have Python 3, pip and Docker installed. You can install the necessary Python libraries using the following command:
 ```
-pip install pandas scikit-learn
+pip install -r requirements.txt
 ```
 
 ### Installation
@@ -31,14 +35,40 @@ Navigate into the project directory:
 cd ufc-fight-predictor
 ```
 ### Usage
-To run the predictor and see the model's accuracy, execute the Predictor.py script:
+To run the predictor and see the model's accuracy, execute the ufc_predictor.py script:
 ```
-python Predictor.py
+python app/ufc_predictor.py
 ```
-Change the names in this line to predict different fights:
+To predict a different fight, change the names in the following line inside the app/ufc_predictor.py script:
 ```
 predict_hypothetical_fight('Tom Aspinall', 'Jon Jones', model_pipeline, df, numerical_features + categorical_features)
 ```
+### Docker Container
+To build the Docker image for the application:
+```
+docker build -t ufc-fight-predictor .
+```
+To run the Docker container locally:
+```
+docker run ufc-fight-predictor
+```
+To push the image to Docker Hub (replace your-dockerhub-username with your actual username):
+```
+docker tag ufc-fight-predictor your-dockerhub-username/ufc-fight-predictor
+docker push your-dockerhub-username/ufc-fight-predictor
+```
+## Deployment on AWS ECS
+This project has been successfully deployed as a Docker container on AWS Elastic Container Service (ECS) using an image from Docker Hub. Here is a high-level overview of the process:
+
+1. **Push Image to Docker Hub:** The Docker image was first built and then pushed to a public or private repository on Docker Hub.
+
+2. **Set up an ECS Cluster:** An ECS cluster was created in the AWS Management Console to manage and run the containerized application.
+
+3. **Create a Task Definition:** A task definition was configured for the application. This definition specified the Docker image to use (from the Docker Hub repository), along with required resources like CPU and memory.
+
+4. **Run the Task:** The task was then run on the ECS cluster. ECS handles the orchestration, pulling the specified Docker image from Docker Hub and running it as a container.
+
+This deployment method leverages AWS-managed infrastructure, making it a scalable and robust way to run containerized applications
 ## 📊 The Data
 The model is trained on the ufc-master.csv dataset, which contains detailed statistics for each fighter in every match, including:
 
@@ -53,7 +83,7 @@ This project uses a Logistic Regression model from the scikit-learn library to c
 
 * **Data Preprocessing:** The model handles categorical features with one-hot encoding and scales numerical features using StandardScaler to ensure they are appropriately weighted.
 
-* **Training:** The dataset is split into training (50%) and testing (50%) sets to train and then evaluate the model on unseen data.
+* **Training:** The dataset is split into training (40%) and testing (60%) sets to train and then evaluate the model on unseen data.
 
 * **Evaluation:** The model's performance is measured using its accuracy score, a detailed classification report, and a confusion matrix.
 ### Result with 50/50 train/test split
@@ -121,6 +151,32 @@ Prediction Probabilities:
   - Tom Aspinall (Red) wins: 75.72%
 
 Predicted Winner: Tom Aspinall
+```
+### result with 40/60 train/test split
+```
+--- Model Evaluation ---
+Model Accuracy: 0.6602
+
+Classification Report:
+              precision    recall  f1-score   support
+
+   Blue Wins       0.60      0.52      0.55      1602
+    Red Wins       0.69      0.76      0.73      2315
+
+    accuracy                           0.66      3917
+   macro avg       0.65      0.64      0.64      3917
+weighted avg       0.65      0.66      0.66      3917
+
+
+Confusion Matrix:
+[[ 828  774]
+ [ 557 1758]]
+
+Confusion Matrix Interpretation:
+Correctly predicted 'Blue Wins': 828
+Incorrectly predicted 'Red Wins' (False Positive): 774
+Incorrectly predicted 'Blue Wins' (False Negative): 557
+Correctly predicted 'Red Wins': 1758
 ```
 ## Model Performance
 
