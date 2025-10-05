@@ -197,6 +197,16 @@ The model was evaluated against the real-world results of **Noche UFC: Lopes vs.
 
 > **Note**: The model could not predict some fights from the card because the fighters were not present in the `ufc-master.csv` dataset (Santiago Luna, Jean Silva, Lee Quang and David Martinez made their debut fight so no past ufc data).
 
+The model was evaluated against the real-world results of **UFC 320**. It correctly predicted 2 out of the 4 fights it had sufficient data for, achieving **50% accuracy** on this event.
+
+| Matchup                              | Predicted Winner      | Actual Winner         | Result      |
+| ------------------------------------ | --------------------- | --------------------- | ----------- |
+| Magomed Ankalaev vs. Alex Pereira       | Alex Pereira     | **Alex Pereira** | ✅ Correct   |
+| Merab Dvalishvili vs. Cory Sandhagen    | Cory Sandhagen   | **Merab Dvalishvili** | ❌ Incorrect   |
+| Jiří Procházka vs. Khalil Rountree      | Jiří Procházka   | **Jiří Procházka** | ✅ Correct   |
+| Josh Emmett vs. Youssef Zalal           | Josh Emmett      | **Youssef Zalal** | ❌ Incorrect |
+
+> **Note**: The model could not predict some fights from the card because the fighters were not present in the `ufc-master.csv` dataset.
 ## 🤝 Contributing
 Contributions make the open-source community an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
 
