@@ -210,7 +210,7 @@ The model was evaluated against the real-world results of **UFC 321**. It correc
 
 | Matchup                              | Predicted Winner      | Actual Winner         | Result      |
 | ------------------------------------ | --------------------- | --------------------- | ----------- |
-| Tom Aspinall vs. Ciryl Gane      | Tom Aspinall     | **No Contest (Draw)** | Tom will beat him next time   |
+| Tom Aspinall vs. Ciryl Gane          | Tom Aspinall     | **No Contest (Draw)** | Tom will beat him next time   |
 | Mackenzie Dern vs. Virna Jandiroba    | Mackenzie Dern   | **Mackenzie Dern** | ✅ Correct   |
 | Umar Nurmagomedov vs. Mario Bautista      | Umar Nurmagomedov   | **Umar Nurmagomedov** | ✅ Correct   |
 | Jailton Almeida vs. Alexander Volkov           | Alexander Volkov      | **Alexander Volkov** | ✅ Correct |
