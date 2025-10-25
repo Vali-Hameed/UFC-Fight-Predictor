@@ -29,7 +29,7 @@ pip install -r requirements.txt
 ### Installation
 Clone the repository to your local machine:
 ```
-git clone [https://github.com/vali-hameed/ufc-fight-predictor.git](https://github.com/vali-hameed/ufc-fight-predictor.git)
+git clone https://github.com/Vali-Hameed/UFC-Fight-Predictor.git
 ```
 Navigate into the project directory:
 ```
