@@ -3,6 +3,15 @@
 # 🥊 UFC Fight Predictor
 A machine learning project that predicts the winner of UFC fights using a **Logistic Regression model**. The model is served via a **RESTful API** built with **FastAPI**, containerized with **Docker**, and deployed on **AWS ECS** for scalable performance.
 
+## 📑 Table of Contents
+- [✨ Features](#-features)
+- [🚀 Getting Started](#-getting-started)
+- [☁️ Deployment](#️-deployment)
+- [📊 The Data](#-the-data)
+- [🤖 The Model](#-the-model)
+- [📈 Model Performance](#-model-performance)
+- [🤝 Contributing](#-contributing)
+
 ## ✨ Features
 * **RESTful API:** Exposes the prediction model through an API built with FastAPI.
 * **Fight Winner Prediction:** Predicts the winner of a UFC match (Red or Blue corner).
@@ -67,6 +76,8 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 You can then access the interactive API documentation at http://localhost:8000/docs.
 
+## ☁️ Deployment
+
 ### Docker Container
 To build the Docker image for the application:
 ```
@@ -81,7 +92,7 @@ To push the image to Docker Hub (replace your-dockerhub-username with your actua
 docker tag ufc-fight-predictor your-dockerhub-username/ufc-fight-predictor
 docker push your-dockerhub-username/ufc-fight-predictor
 ```
-## Deployment on AWS ECS
+### AWS ECS Deployment
 This project has been successfully deployed as a Docker container on AWS Elastic Container Service (ECS) using an image from Docker Hub. Here is a high-level overview of the process:
 
 1. **Push Image to Docker Hub:** The Docker image was first built and then pushed to a public or private repository on Docker Hub.
@@ -185,7 +196,23 @@ Classification Report:
 ```
 </details>
 
-## Model Performance
+## 📈 Model Performance
+
+The model was evaluated against the real-world results of **UFC 321**. It correctly predicted 4 out of the 4 fights it had sufficient data for, achieving **100% accuracy** on this event (excluding the no contest of Tom Aspinall vs Ciryl Gane).
+
+| Matchup                              | Predicted Winner      | Actual Winner         | Result      |
+| ------------------------------------ | --------------------- | --------------------- | ----------- |
+| Tom Aspinall vs. Ciryl Gane          | Tom Aspinall     | **No Contest (Draw)** | Tom will beat him next time   |
+| Mackenzie Dern vs. Virna Jandiroba    | Mackenzie Dern   | **Mackenzie Dern** | ✅ Correct   |
+| Umar Nurmagomedov vs. Mario Bautista      | Umar Nurmagomedov   | **Umar Nurmagomedov** | ✅ Correct   |
+| Jailton Almeida vs. Alexander Volkov           | Alexander Volkov      | **Alexander Volkov** | ✅ Correct |
+| Azamat Murzakanov vs. Aleksandar Rakić | Azamat Murzakanov | **Azamat Murzakanov**| ✅ Correct |
+
+> **Note**: Previously, fighters missing from the CSV could not be evaluated. By running the new automated dataset updater before generating predictions, the model now has access to the most recent fighter records, significantly reducing missing data issues for active veterans!
+
+### Previous Events
+<details>
+<summary>Click to expand older event predictions</summary>
 
 The model was evaluated against the real-world results of **Noche UFC: Lopes vs. Silva**. It correctly predicted 3 out of the 4 fights it had sufficient data for, achieving **75% accuracy** on this event.
 
@@ -207,17 +234,7 @@ The model was evaluated against the real-world results of **UFC 320**. It correc
 | Jiří Procházka vs. Khalil Rountree      | Jiří Procházka   | **Jiří Procházka** | ✅ Correct   |
 | Josh Emmett vs. Youssef Zalal           | Josh Emmett      | **Youssef Zalal** | ❌ Incorrect |
 
-The model was evaluated against the real-world results of **UFC 321**. It correctly predicted 4 out of the 4 fights it had sufficient data for, achieving **100% accuracy** on this event (excluding the no contest of Tom Aspinall vs Ciryl Gane).
-
-| Matchup                              | Predicted Winner      | Actual Winner         | Result      |
-| ------------------------------------ | --------------------- | --------------------- | ----------- |
-| Tom Aspinall vs. Ciryl Gane          | Tom Aspinall     | **No Contest (Draw)** | Tom will beat him next time   |
-| Mackenzie Dern vs. Virna Jandiroba    | Mackenzie Dern   | **Mackenzie Dern** | ✅ Correct   |
-| Umar Nurmagomedov vs. Mario Bautista      | Umar Nurmagomedov   | **Umar Nurmagomedov** | ✅ Correct   |
-| Jailton Almeida vs. Alexander Volkov           | Alexander Volkov      | **Alexander Volkov** | ✅ Correct |
-| Azamat Murzakanov vs. Aleksandar Rakić | Azamat Murzakanov | **Azamat Murzakanov**| ✅ Correct |
-
-> **Note**: Previously, fighters missing from the CSV could not be evaluated. By running the new automated dataset updater before generating predictions, the model now has access to the most recent fighter records, significantly reducing missing data issues for active veterans!
+</details>
 ## 🤝 Contributing
 Contributions make the open-source community an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
 
