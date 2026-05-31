@@ -1,7 +1,4 @@
 import pandas as pd
-
-
-
 # ---  Making Predictions on Hypothetical Fights ---
 def get_latest_stats(fighter_name, dataframe):
     """Finds the most recent fight record for a given fighter."""
@@ -67,7 +64,7 @@ def predict_hypothetical_fight(red_fighter_name, blue_fighter_name, model, dataf
     # Create a DataFrame from the dictionary, ensuring column order matches the model's training data
     fight_df = pd.DataFrame([hypothetical_fight_data], columns=feature_cols)
 
-    # Fill any potential NaNs just in case (e.g., stance)
+    # Fill any potential NaNs just in case 
 
 
     # --- Make the prediction ---
