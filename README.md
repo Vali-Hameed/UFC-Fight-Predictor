@@ -1,40 +1,64 @@
 ![UFC Logo](https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/UFC_Logo.svg/2560px-UFC_Logo.svg.png)
 
 # 🥊 UFC Fight Predictor
-A machine learning project that predicts the winner of UFC fights using a **Logistic Regression model**.The model is served via a **RESTful API** built with **FastAPI**, containerized with **Docker**, and deployed on **AWS ECS** for scalable performance.
+A machine learning project that predicts the winner of UFC fights using a **Logistic Regression model**. The model is served via a **RESTful API** built with **FastAPI**, containerized with **Docker**, and deployed on **AWS ECS** for scalable performance.
 
 ## ✨ Features
 * **RESTful API:** Exposes the prediction model through an API built with FastAPI.
 * **Fight Winner Prediction:** Predicts the winner of a UFC match (Red or Blue corner).
-
-* **Data-Driven:** Uses a comprehensive dataset of past UFC fights (ufc-master.csv).
-
+* **Automated Data Updates:** Includes a scraper (`update_dataset.py`) that pulls the latest fight results from [ufcstats.com](http://ufcstats.com) and appends them directly to the training dataset.
+* **Data-Driven:** Uses a comprehensive dataset of past UFC fights (`ufc-master.csv`) with 7,000+ fight records.
+* **Hyperparameter Tuned:** Model parameters optimised via GridSearchCV for best accuracy.
 * **Model Evaluation:** Includes model accuracy, a classification report, and a confusion matrix to evaluate performance.
-
-* **Feature Importance:** Identifies key features that are most predictive of a fight's outcome.
-
 * **Containerized Deployment:** Packaged as a Docker container for easy portability and deployment.
-
 * **Cloud Deployment:** Successfully deployed and running on AWS ECS.
 
 ## 🚀 Getting Started
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
 ### Prerequisites
-You'll need to have Python 3, pip and Docker installed. You can install the necessary Python libraries using the following command:
-```
-pip install -r requirements.txt
-```
+You'll need to have Python 3, pip and Docker installed.
 
 ### Installation
 Clone the repository to your local machine:
 ```
 git clone https://github.com/Vali-Hameed/UFC-Fight-Predictor.git
 ```
-Navigate into the project directory:
+Navigate into the project directory and set up a virtual environment:
 ```
-cd ufc-fight-predictor
+cd UFC-Fight-Predictor
+python -m venv venv
+venv\Scripts\activate        # Windows
+# source venv/bin/activate   # macOS/Linux
+pip install -r requirements.txt
 ```
+Install Playwright (needed for the dataset updater):
+```
+playwright install chromium
+```
+
+### Training the Model
+Before running the API, you need to train the model and generate the `.pkl` files:
+```
+cd app
+python model.py
+```
+
+### Updating the Dataset
+To pull in the latest UFC fight results and append them to `ufc-master.csv`:
+```
+cd app
+python update_dataset.py
+```
+This script will:
+1. Read the latest date in `ufc-master.csv`
+2. Scrape all completed UFC events after that date from [ufcstats.com](http://ufcstats.com)
+3. For each fight, scrape both fighters' career stats (height, reach, wins, losses, streaks, etc.)
+4. Calculate all derived features (e.g. `HeightDif`, `WinStreakDif`, `TotalTitleBoutDif`)
+5. Append the new rows to the CSV
+
+After updating the dataset, re-run `python model.py` to retrain with the new data.
+
 ### Usage
 #### Running the API Server
 To serve the model via the FastAPI application, run the following command from the root directory:
@@ -42,14 +66,7 @@ To serve the model via the FastAPI application, run the following command from t
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 You can then access the interactive API documentation at http://localhost:8000/docs.
-To run the predictor and see the model's accuracy, execute the ufc_predictor.py script:
-```
-python app/ufc_predictor.py
-```
-To predict a different fight, change the names in the following line inside the app/ufc_predictor.py script:
-```
-predict_hypothetical_fight('Tom Aspinall', 'Jon Jones', model_pipeline, df, numerical_features + categorical_features)
-```
+
 ### Docker Container
 To build the Docker image for the application:
 ```
@@ -76,7 +93,7 @@ This project has been successfully deployed as a Docker container on AWS Elastic
 4. **Run the Task:** The task was then run on the ECS cluster. which pulls the image and runs it as a container, making the API accessible.
 This deployment method leverages AWS-managed infrastructure, making it a scalable and robust way to run containerized applications
 ## 📊 The Data
-The model is trained on the ufc-master.csv dataset, which contains detailed statistics for each fighter in every match, including:
+The model is trained on the `ufc-master.csv` dataset, which contains detailed statistics for each fighter in every match, including:
 
 * **Physical Attributes:** Age, height, reach, and weight.
 
@@ -84,17 +101,52 @@ The model is trained on the ufc-master.csv dataset, which contains detailed stat
 
 * **Betting Odds:** Odds for both the Red and Blue corner fighters.
 
+The dataset is kept up-to-date using the `update_dataset.py` scraper, which pulls the latest results from [ufcstats.com](http://ufcstats.com).
+
 ## 🤖 The Model
 This project uses a Logistic Regression model from the scikit-learn library to classify fight outcomes.
 
 * **Data Preprocessing:** The model handles categorical features with one-hot encoding and scales numerical features using StandardScaler to ensure they are appropriately weighted.
 
-* **Training:** The dataset is split into training (40%) and testing (60%) sets to train and then evaluate the model on unseen data.
+* **Hyperparameter Tuning:** GridSearchCV was used to find the optimal parameters. The best configuration uses **Elastic Net regularisation** (`C=0.1`, `l1_ratio=0.5`) with the SAGA solver.
+
+* **Training:** The dataset is split into training (50%) and testing (50%) sets to train and then evaluate the model on unseen data.
 
 * **Evaluation:** The model's performance is measured using its accuracy score, a detailed classification report, and a confusion matrix.
-### Result with 50/50 train/test split
+
+### Current Results (Tuned Model — 50/50 split)
 ```
 --- Model Evaluation ---
+Model Accuracy: 0.6966
+
+Classification Report:
+              precision    recall  f1-score   support
+
+   Blue Wins       0.62      0.48      0.54      1343
+    Red Wins       0.73      0.83      0.77      2292
+
+    accuracy                           0.70      3635
+   macro avg       0.67      0.65      0.66      3635
+weighted avg       0.69      0.70      0.69      3635
+
+
+Confusion Matrix:
+[[ 640  703]
+ [ 400 1892]]
+
+Confusion Matrix Interpretation:
+Correctly predicted 'Blue Wins': 640
+Incorrectly predicted 'Red Wins' (False Positive): 703
+Incorrectly predicted 'Blue Wins' (False Negative): 400
+Correctly predicted 'Red Wins': 1892
+```
+
+### Previous Results (Before Tuning)
+<details>
+<summary>Click to expand previous results</summary>
+
+#### Result with 50/50 train/test split
+```
 Model Accuracy: 0.6590
 
 Classification Report:
@@ -104,30 +156,10 @@ Classification Report:
     Red Wins       0.69      0.76      0.72      1924
 
     accuracy                           0.66      3264
-   macro avg       0.65      0.64      0.64      3264
-weighted avg       0.65      0.66      0.65      3264
-
-
-Confusion Matrix:
-[[ 687  653]
- [ 460 1464]]
-
-Confusion Matrix Interpretation:
-Correctly predicted 'Blue Wins': 687
-Incorrectly predicted 'Red Wins' (False Positive): 653
-Incorrectly predicted 'Blue Wins' (False Negative): 460
-Correctly predicted 'Red Wins': 1464
-
---- Predicting: Tom Aspinall (Red) vs. Jon Jones (Blue) ---
-Prediction Probabilities:
-  - Jon Jones (Blue) wins: 29.04%
-  - Tom Aspinall (Red) wins: 70.96%
-
-Predicted Winner: Tom Aspinall
 ```
-### Result with 80/20 train/test split
+
+#### Result with 80/20 train/test split
 ```
---- Model Evaluation ---
 Model Accuracy: 0.6478
 
 Classification Report:
@@ -137,30 +169,10 @@ Classification Report:
     Red Wins       0.69      0.74      0.71       779
 
     accuracy                           0.65      1306
-   macro avg       0.63      0.63      0.63      1306
-weighted avg       0.64      0.65      0.64      1306
-
-
-Confusion Matrix:
-[[271 256]
- [204 575]]
-
-Confusion Matrix Interpretation:
-Correctly predicted 'Blue Wins': 271
-Incorrectly predicted 'Red Wins' (False Positive): 256
-Incorrectly predicted 'Blue Wins' (False Negative): 204
-Correctly predicted 'Red Wins': 575
-
---- Predicting: Tom Aspinall (Red) vs. Jon Jones (Blue) ---
-Prediction Probabilities:
-  - Jon Jones (Blue) wins: 24.28%
-  - Tom Aspinall (Red) wins: 75.72%
-
-Predicted Winner: Tom Aspinall
 ```
-### result with 40/60 train/test split
+
+#### Result with 40/60 train/test split
 ```
---- Model Evaluation ---
 Model Accuracy: 0.6602
 
 Classification Report:
@@ -170,20 +182,9 @@ Classification Report:
     Red Wins       0.69      0.76      0.73      2315
 
     accuracy                           0.66      3917
-   macro avg       0.65      0.64      0.64      3917
-weighted avg       0.65      0.66      0.66      3917
-
-
-Confusion Matrix:
-[[ 828  774]
- [ 557 1758]]
-
-Confusion Matrix Interpretation:
-Correctly predicted 'Blue Wins': 828
-Incorrectly predicted 'Red Wins' (False Positive): 774
-Incorrectly predicted 'Blue Wins' (False Negative): 557
-Correctly predicted 'Red Wins': 1758
 ```
+</details>
+
 ## Model Performance
 
 The model was evaluated against the real-world results of **Noche UFC: Lopes vs. Silva**. It correctly predicted 3 out of the 4 fights it had sufficient data for, achieving **75% accuracy** on this event.
@@ -195,7 +196,7 @@ The model was evaluated against the real-world results of **Noche UFC: Lopes vs.
 | Rafa Garcia vs. Jared Gordon         | Rafa Garcia           | **Rafa Garcia** | ✅ Correct   |
 | Diego Lopes vs. Jean Silva           | Jean Silva            | **Diego Lopes** | ❌ Incorrect |
 
-> **Note**: The model could not predict some fights from the card because the fighters were not present in the `ufc-master.csv` dataset (Santiago Luna, Jean Silva, Lee Quang and David Martinez made their debut fight so no past ufc data).
+> **Note**: Historically, the model could not predict some fights from recent cards because the static `ufc-master.csv` dataset was out of date. With the introduction of the automated scraper (`update_dataset.py`), this issue is largely resolved! As long as the scraper is run, the model has up-to-date fight data. (However, true debut fighters like Santiago Luna or David Martinez still will not have past UFC data to predict on).
 
 The model was evaluated against the real-world results of **UFC 320**. It correctly predicted 2 out of the 4 fights it had sufficient data for, achieving **50% accuracy** on this event.
 
@@ -206,7 +207,7 @@ The model was evaluated against the real-world results of **UFC 320**. It correc
 | Jiří Procházka vs. Khalil Rountree      | Jiří Procházka   | **Jiří Procházka** | ✅ Correct   |
 | Josh Emmett vs. Youssef Zalal           | Josh Emmett      | **Youssef Zalal** | ❌ Incorrect |
 
-> **Note**: The model could not predict some fights from the card because the fighters were not present in the `ufc-master.csv` dataset.
+> **Note**: Previously, fighters missing from the CSV could not be evaluated. By running the new automated dataset updater before generating predictions, the model now has access to the most recent fighter records, significantly reducing missing data issues for active veterans!
 ## 🤝 Contributing
 Contributions make the open-source community an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
 

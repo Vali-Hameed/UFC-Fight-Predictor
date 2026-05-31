@@ -32,7 +32,7 @@ X.loc[:, numerical_features] = X[numerical_features].fillna(numerical_medians)
 # fill all categorical columns at once
 X.loc[:, categorical_features] = X[categorical_features].fillna('Unknown')
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.6, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=42)
 
 preprocessor = ColumnTransformer(
     transformers=[
@@ -40,7 +40,13 @@ preprocessor = ColumnTransformer(
         ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)
     ])
 model_pipeline = Pipeline(steps=[('preprocessor', preprocessor),
-                               ('classifier', LogisticRegression(max_iter=1000, random_state=42))])
+                               ('classifier', LogisticRegression(
+                                   C=0.1,
+                                   penalty='elasticnet',
+                                   solver='saga',
+                                   l1_ratio=0.5,
+                                   max_iter=2000,
+                                   random_state=42))])
 # ---  Training the Model ---
 print("Training the logistic regression model...")
 model_pipeline.fit(X_train, y_train)
