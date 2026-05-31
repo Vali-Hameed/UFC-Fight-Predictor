@@ -207,6 +207,16 @@ The model was evaluated against the real-world results of **UFC 320**. It correc
 | Jiří Procházka vs. Khalil Rountree      | Jiří Procházka   | **Jiří Procházka** | ✅ Correct   |
 | Josh Emmett vs. Youssef Zalal           | Josh Emmett      | **Youssef Zalal** | ❌ Incorrect |
 
+The model was evaluated against the real-world results of **UFC 321**. It correctly predicted 4 out of the 4 fights it had sufficient data for, achieving **100% accuracy** on this event (excluding the no contest of Tom Aspinall vs Ciryl Gane).
+
+| Matchup                              | Predicted Winner      | Actual Winner         | Result      |
+| ------------------------------------ | --------------------- | --------------------- | ----------- |
+| Tom Aspinall vs. Ciryl Gane          | Tom Aspinall     | **No Contest (Draw)** | Tom will beat him next time   |
+| Mackenzie Dern vs. Virna Jandiroba    | Mackenzie Dern   | **Mackenzie Dern** | ✅ Correct   |
+| Umar Nurmagomedov vs. Mario Bautista      | Umar Nurmagomedov   | **Umar Nurmagomedov** | ✅ Correct   |
+| Jailton Almeida vs. Alexander Volkov           | Alexander Volkov      | **Alexander Volkov** | ✅ Correct |
+| Azamat Murzakanov vs. Aleksandar Rakić | Azamat Murzakanov | **Azamat Murzakanov**| ✅ Correct |
+
 > **Note**: Previously, fighters missing from the CSV could not be evaluated. By running the new automated dataset updater before generating predictions, the model now has access to the most recent fighter records, significantly reducing missing data issues for active veterans!
 ## 🤝 Contributing
 Contributions make the open-source community an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
