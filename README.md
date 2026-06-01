@@ -1,7 +1,7 @@
-![UFC Logo](https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/UFC_Logo.svg/2560px-UFC_Logo.svg.png)
+![UFC Logo](https://upload.wikimedia.org/wikipedia/commons/9/92/UFC_Logo.svg)
 
 # 🥊 UFC Fight Predictor
-A machine learning project that predicts the winner of UFC fights using a **Logistic Regression model**. The model is served via a **RESTful API** built with **FastAPI**, containerized with **Docker**, and deployed on **AWS ECS** for scalable performance.
+A machine learning project that predicts the winner of UFC fights using a **Logistic Regression model** with **69.66%** accuracy. The model is served via a **RESTful API** built with **FastAPI**, containerized with **Docker**, and deployed on **AWS ECS** for scalable performance.
 
 ## 📑 Table of Contents
 - [✨ Features](#-features)
@@ -235,7 +235,8 @@ The model was evaluated against the real-world results of **UFC 320**. It correc
 | Josh Emmett vs. Youssef Zalal           | Josh Emmett      | **Youssef Zalal** | ❌ Incorrect |
 
 </details>
-## 🤝 Contributing
+
+##  🤝 Contributing
 Contributions make the open-source community an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
 
 1.  Fork the Project
