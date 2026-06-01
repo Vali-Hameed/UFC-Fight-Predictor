@@ -1,0 +1,6 @@
+services:
+  api:
+    build: .
+    container_name: ufc-fight-predictor-api
+    ports:
+      - "8000:80"
