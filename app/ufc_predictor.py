@@ -28,7 +28,7 @@ def get_latest_stats(fighter_name, dataframe):
     return fighter_fights.sort_values(by='Date', ascending=False).iloc[0]
 
 def predict_hypothetical_fight(red_fighter_name, blue_fighter_name, model, dataframe, feature_cols):
-    """Predicts the outcome of a hypothetical fight."""
+    """Predicts the outcome of a hypothetical fight using symmetric features."""
     # Resolve names first to handle typos
     red_matched_name = get_closest_fighter_name(red_fighter_name, dataframe)
     blue_matched_name = get_closest_fighter_name(blue_fighter_name, dataframe)
@@ -66,46 +66,60 @@ def predict_hypothetical_fight(red_fighter_name, blue_fighter_name, model, dataf
     # Create a dictionary to hold the features for our hypothetical fight
     hypothetical_fight_data = {}
 
-    # --- Extract and calculate features ---
-    # Odds (Set to -110 for both to simulate a perfect "pick'em" fight with neutral odds)
-    # Using the historical mean gave Red a massive built-in advantage because Red was usually the favorite!
-    hypothetical_fight_data['RedOdds'] = -110.0
-    hypothetical_fight_data['BlueOdds'] = -110.0
-
-    # Physical attributes
-    hypothetical_fight_data['RedAge'] = red_stats_row[f'{red_corner}Age']
-    hypothetical_fight_data['BlueAge'] = blue_stats_row[f'{blue_corner}Age']
+    # --- Extract raw stats for each fighter ---
     red_height = red_stats_row[f'{red_corner}HeightCms']
     blue_height = blue_stats_row[f'{blue_corner}HeightCms']
     red_reach = red_stats_row[f'{red_corner}ReachCms']
     blue_reach = blue_stats_row[f'{blue_corner}ReachCms']
+    red_age = red_stats_row[f'{red_corner}Age']
+    blue_age = blue_stats_row[f'{blue_corner}Age']
 
-    # Stances
-    hypothetical_fight_data['RedStance'] = red_stats_row[f'{red_corner}Stance']
-    hypothetical_fight_data['BlueStance'] = blue_stats_row[f'{blue_corner}Stance']
-
-    # Calculate difference features
+    # --- Calculate ALL difference features (Red - Blue) ---
+    # These are symmetric: swapping fighters just negates the values.
     hypothetical_fight_data['HeightDif'] = red_height - blue_height
     hypothetical_fight_data['ReachDif'] = red_reach - blue_reach
+    hypothetical_fight_data['AgeDif'] = red_age - blue_age
     hypothetical_fight_data['WinStreakDif'] = red_stats_row[f'{red_corner}CurrentWinStreak'] - blue_stats_row[f'{blue_corner}CurrentWinStreak']
+    hypothetical_fight_data['LoseStreakDif'] = red_stats_row[f'{red_corner}CurrentLoseStreak'] - blue_stats_row[f'{blue_corner}CurrentLoseStreak']
+    hypothetical_fight_data['LongestWinStreakDif'] = red_stats_row[f'{red_corner}LongestWinStreak'] - blue_stats_row[f'{blue_corner}LongestWinStreak']
+    hypothetical_fight_data['WinDif'] = red_stats_row[f'{red_corner}Wins'] - blue_stats_row[f'{blue_corner}Wins']
     hypothetical_fight_data['LossDif'] = red_stats_row[f'{red_corner}Losses'] - blue_stats_row[f'{blue_corner}Losses']
     hypothetical_fight_data['TotalRoundDif'] = red_stats_row[f'{red_corner}TotalRoundsFought'] - blue_stats_row[f'{blue_corner}TotalRoundsFought']
     hypothetical_fight_data['TotalTitleBoutDif'] = red_stats_row[f'{red_corner}TotalTitleBouts'] - blue_stats_row[f'{blue_corner}TotalTitleBouts']
     hypothetical_fight_data['KODif'] = red_stats_row[f'{red_corner}WinsByKO'] - blue_stats_row[f'{blue_corner}WinsByKO']
     hypothetical_fight_data['SubDif'] = red_stats_row[f'{red_corner}WinsBySubmission'] - blue_stats_row[f'{blue_corner}WinsBySubmission']
-    hypothetical_fight_data['AvgTDDif'] = red_stats_row[f'{red_corner}AvgTDLanded'] - blue_stats_row[f'{blue_corner}AvgTDLanded']
+    hypothetical_fight_data['SigStrDif'] = red_stats_row[f'{red_corner}AvgSigStrLanded'] - blue_stats_row[f'{blue_corner}AvgSigStrLanded']
     hypothetical_fight_data['AvgSubAttDif'] = red_stats_row[f'{red_corner}AvgSubAtt'] - blue_stats_row[f'{blue_corner}AvgSubAtt']
+    hypothetical_fight_data['AvgTDDif'] = red_stats_row[f'{red_corner}AvgTDLanded'] - blue_stats_row[f'{blue_corner}AvgTDLanded']
+
+    # --- Symmetric StanceMatchup ---
+    # Sort alphabetically so the matchup is the same regardless of corner assignment
+    red_stance = str(red_stats_row[f'{red_corner}Stance']) if pd.notna(red_stats_row[f'{red_corner}Stance']) else 'Unknown'
+    blue_stance = str(blue_stats_row[f'{blue_corner}Stance']) if pd.notna(blue_stats_row[f'{blue_corner}Stance']) else 'Unknown'
+    sorted_stances = sorted([red_stance, blue_stance])
+    hypothetical_fight_data['StanceMatchup'] = f"{sorted_stances[0]}_vs_{sorted_stances[1]}"
 
     # Create a DataFrame from the dictionary, ensuring column order matches the model's training data
     fight_df = pd.DataFrame([hypothetical_fight_data], columns=feature_cols)
 
-    # Fill any potential NaNs just in case 
+    # --- Symmetrized prediction ---
+    # Predict in BOTH directions and average to eliminate corner bias.
+    # Forward: fighter1=Red, fighter2=Blue (as constructed above)
+    # Reverse: negate all difference features (simulating swapped corners),
+    #          StanceMatchup stays the same (it's already corner-invariant)
+    forward_proba = model.predict_proba(fight_df)[0]  # [P(Blue), P(Red)]
 
+    # Build the reversed DataFrame: negate all numerical dif features
+    reversed_data = hypothetical_fight_data.copy()
+    for feat in feature_cols:
+        if feat != 'StanceMatchup':  # Don't negate the categorical feature
+            reversed_data[feat] = -reversed_data[feat]
+    reversed_df = pd.DataFrame([reversed_data], columns=feature_cols)
+    reverse_proba = model.predict_proba(reversed_df)[0]  # [P(Blue'), P(Red')]
 
-    # --- Make the prediction ---
-    prediction_proba = model.predict_proba(fight_df)
-    blue_win_prob = prediction_proba[0][0]
-    red_win_prob = prediction_proba[0][1]
+    # Average: forward P(Red wins) with reverse P(Blue wins) [which = P(Red wins in swapped frame)]
+    red_win_prob = (forward_proba[1] + reverse_proba[0]) / 2.0
+    blue_win_prob = 1.0 - red_win_prob  # Ensures they sum to exactly 100%
 
     winner = red_fighter_name if red_win_prob > blue_win_prob else blue_fighter_name
     
@@ -120,7 +134,3 @@ def predict_hypothetical_fight(red_fighter_name, blue_fighter_name, model, dataf
         "red_fighter": red_fighter_name,
         "blue_fighter": blue_fighter_name
     }
-
-
-
-

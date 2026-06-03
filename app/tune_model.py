@@ -14,16 +14,27 @@ df = df.sort_values(by='Date')
 df = df[df['Winner'].isin(['Red', 'Blue'])]
 df['Winner_encoded'] = df['Winner'].apply(lambda x: 1 if x == 'Red' else 0)
 
+# --- Create symmetric StanceMatchup feature ---
+def make_stance_matchup(row):
+    red_stance = str(row.get('RedStance', 'Unknown')) if pd.notna(row.get('RedStance')) else 'Unknown'
+    blue_stance = str(row.get('BlueStance', 'Unknown')) if pd.notna(row.get('BlueStance')) else 'Unknown'
+    sorted_stances = sorted([red_stance, blue_stance])
+    return f"{sorted_stances[0]}_vs_{sorted_stances[1]}"
+
+df['StanceMatchup'] = df.apply(make_stance_matchup, axis=1)
+
+# --- Symmetric difference-only features ---
 numerical_features = [
-    'RedOdds', 'BlueOdds', 'RedAge', 'BlueAge', 'HeightDif', 'ReachDif',
-    'WinStreakDif', 'LossDif', 'TotalRoundDif', 'TotalTitleBoutDif',
-    'KODif', 'SubDif', 'AvgTDDif', 'AvgSubAttDif'
+    'HeightDif', 'ReachDif', 'AgeDif',
+    'WinStreakDif', 'LoseStreakDif', 'LongestWinStreakDif',
+    'WinDif', 'LossDif',
+    'TotalRoundDif', 'TotalTitleBoutDif',
+    'KODif', 'SubDif',
+    'SigStrDif', 'AvgSubAttDif', 'AvgTDDif'
 ]
-categorical_features = ['RedStance', 'BlueStance']
+categorical_features = ['StanceMatchup']
 X = df[numerical_features + categorical_features]
 y = df['Winner_encoded']
-
-
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
 
@@ -33,7 +44,7 @@ numerical_transformer = Pipeline(steps=[
 ])
 
 categorical_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='constant', fill_value='Unknown')),
+    ('imputer', SimpleImputer(strategy='constant', fill_value='Unknown_vs_Unknown')),
     ('onehot', OneHotEncoder(handle_unknown='ignore'))
 ])
 
@@ -52,7 +63,6 @@ param_grid = {
     'classifier__solver': ['saga'],
     'classifier__l1_ratio': [0.0, 0.25, 0.5, 0.75, 1.0],
     'classifier__max_iter': [2000],
-    'classifier__class_weight': ['balanced', None]
 }
 
 print("Running GridSearchCV... (this may take a minute)")
@@ -66,7 +76,12 @@ print(f"Best CV Accuracy: {grid_search.best_score_:.4f}")
 best_model = grid_search.best_estimator_
 y_pred = best_model.predict(X_test)
 test_accuracy = accuracy_score(y_test, y_pred)
+
+# Baseline
+baseline_accuracy = y_test.mean()
+print(f"\nBaseline accuracy (always predict Red): {baseline_accuracy:.4f}")
 print(f"Test Set Accuracy: {test_accuracy:.4f}")
+print(f"Improvement over baseline: {(test_accuracy - baseline_accuracy)*100:+.1f} percentage points")
 print("\nClassification Report:")
 print(classification_report(y_test, y_pred, target_names=['Blue Wins', 'Red Wins']))
 
@@ -76,4 +91,5 @@ for split in [0.2, 0.3, 0.4, 0.5, 0.6]:
     X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=split, shuffle=False)
     best_model.fit(X_tr, y_tr)
     acc = accuracy_score(y_te, best_model.predict(X_te))
-    print(f"  test_size={split}: Accuracy={acc:.4f} (train={len(X_tr)}, test={len(X_te)})")
+    baseline = y_te.mean()
+    print(f"  test_size={split}: Accuracy={acc:.4f} (baseline={baseline:.4f}, +{(acc-baseline)*100:.1f}pp, train={len(X_tr)}, test={len(X_te)})")
