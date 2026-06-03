@@ -33,9 +33,10 @@ def predict_hypothetical_fight(red_fighter_name, blue_fighter_name, model, dataf
     hypothetical_fight_data = {}
 
     # --- Extract and calculate features ---
-    # Odds (Using average as a neutral baseline since we don't know the real odds)
-    hypothetical_fight_data['RedOdds'] = dataframe['RedOdds'].mean()
-    hypothetical_fight_data['BlueOdds'] = dataframe['BlueOdds'].mean()
+    # Odds (Set to -110 for both to simulate a perfect "pick'em" fight with neutral odds)
+    # Using the historical mean gave Red a massive built-in advantage because Red was usually the favorite!
+    hypothetical_fight_data['RedOdds'] = -110.0
+    hypothetical_fight_data['BlueOdds'] = -110.0
 
     # Physical attributes
     hypothetical_fight_data['RedAge'] = red_stats_row[f'{red_corner}Age']
