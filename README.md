@@ -1,7 +1,7 @@
 ![UFC Logo](https://upload.wikimedia.org/wikipedia/commons/9/92/UFC_Logo.svg)
 
 # 🥊 UFC Fight Predictor
-A machine learning project that predicts the winner of UFC fights using a **Logistic Regression model** with **69.66%** accuracy. The model is served via a **RESTful API** built with **FastAPI**, containerized with **Docker**, and deployed on **AWS ECS** for scalable performance.
+A machine learning project that predicts the winner of UFC fights using a **Logistic Regression model** with **76.89%** accuracy. The model is served via a **RESTful API** built with **FastAPI**, containerized with **Docker**, and deployed on **AWS ECS** for scalable performance.
 
 ## 📑 Table of Contents
 - [✨ Features](#-features)
