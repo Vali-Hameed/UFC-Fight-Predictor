@@ -2,6 +2,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 import pickle
@@ -13,6 +14,7 @@ except FileNotFoundError:
     exit()
 
 df['Date'] = pd.to_datetime(df['Date'])
+df = df.sort_values(by='Date')
 df = df[df['Winner'].isin(['Red', 'Blue'])]
 
 # Create the target variable: 1 if Red wins, 0 if Blue wins
@@ -26,18 +28,24 @@ numerical_features = [
 categorical_features = ['RedStance', 'BlueStance']
 X = df[numerical_features + categorical_features]
 y = df['Winner_encoded']
-# fill all numerical columns at once
-numerical_medians = X[numerical_features].median()
-X.loc[:, numerical_features] = X[numerical_features].fillna(numerical_medians)
-# fill all categorical columns at once
-X.loc[:, categorical_features] = X[categorical_features].fillna('Unknown')
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=42)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
+
+numerical_transformer = Pipeline(steps=[
+    ('imputer', SimpleImputer(strategy='median')),
+    ('scaler', StandardScaler())
+])
+
+categorical_transformer = Pipeline(steps=[
+    ('imputer', SimpleImputer(strategy='constant', fill_value='Unknown')),
+    ('onehot', OneHotEncoder(handle_unknown='ignore'))
+])
 
 preprocessor = ColumnTransformer(
     transformers=[
-        ('num', StandardScaler(), numerical_features),
-        ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)
+        ('num', numerical_transformer, numerical_features),
+        ('cat', categorical_transformer, categorical_features)
     ])
 model_pipeline = Pipeline(steps=[('preprocessor', preprocessor),
                                ('classifier', LogisticRegression(
@@ -46,6 +54,7 @@ model_pipeline = Pipeline(steps=[('preprocessor', preprocessor),
                                    solver='saga',
                                    l1_ratio=0.5,
                                    max_iter=2000,
+                                   class_weight='balanced',
                                    random_state=42))])
 # ---  Training the Model ---
 print("Training the logistic regression model...")
