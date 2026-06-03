@@ -1,5 +1,21 @@
 import pandas as pd
+import difflib
+
 # ---  Making Predictions on Hypothetical Fights ---
+
+def get_closest_fighter_name(fighter_name, dataframe):
+    """Finds the exact or closest fighter name in the dataset."""
+    all_fighters = set(dataframe['RedFighter']).union(set(dataframe['BlueFighter']))
+    all_fighters = [str(f) for f in all_fighters if pd.notna(f)]
+    
+    if fighter_name in all_fighters:
+        return fighter_name
+        
+    matches = difflib.get_close_matches(fighter_name, all_fighters, n=1, cutoff=0.5)
+    if matches:
+        return matches[0]
+    return None
+
 def get_latest_stats(fighter_name, dataframe):
     """Finds the most recent fight record for a given fighter."""
     # Find all fights where the fighter was in either corner
@@ -13,6 +29,24 @@ def get_latest_stats(fighter_name, dataframe):
 
 def predict_hypothetical_fight(red_fighter_name, blue_fighter_name, model, dataframe, feature_cols):
     """Predicts the outcome of a hypothetical fight."""
+    # Resolve names first to handle typos
+    red_matched_name = get_closest_fighter_name(red_fighter_name, dataframe)
+    blue_matched_name = get_closest_fighter_name(blue_fighter_name, dataframe)
+
+    if not red_matched_name:
+        print(f"Could not find data or close match for {red_fighter_name}")
+        return None
+    if not blue_matched_name:
+        print(f"Could not find data or close match for {blue_fighter_name}")
+        return None
+        
+    if red_matched_name != red_fighter_name:
+        print(f"Using closest match '{red_matched_name}' for '{red_fighter_name}'")
+        red_fighter_name = red_matched_name
+    if blue_matched_name != blue_fighter_name:
+        print(f"Using closest match '{blue_matched_name}' for '{blue_fighter_name}'")
+        blue_fighter_name = blue_matched_name
+
     print(f"\n--- Predicting: {red_fighter_name} (Red) vs. {blue_fighter_name} (Blue) ---")
 
     red_stats_row = get_latest_stats(red_fighter_name, dataframe)
@@ -20,10 +54,10 @@ def predict_hypothetical_fight(red_fighter_name, blue_fighter_name, model, dataf
 
     if red_stats_row is None:
         print(f"Could not find data for {red_fighter_name}")
-        return
+        return None
     if blue_stats_row is None:
         print(f"Could not find data for {blue_fighter_name}")
-        return
+        return None
 
     # Determine which corner the fighter was in during their last fight to get correct stats
     red_corner = 'Red' if red_stats_row['RedFighter'] == red_fighter_name else 'Blue'
