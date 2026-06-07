@@ -1,7 +1,7 @@
 ![UFC Logo](https://upload.wikimedia.org/wikipedia/commons/9/92/UFC_Logo.svg)
 
 # 🥊 UFC Fight Predictor
-A machine learning project that predicts the winner of UFC fights using a **Logistic Regression model** with **76.89%** accuracy. The model is served via a **RESTful API** built with **FastAPI**, containerized with **Docker**, and deployed on **AWS ECS** for scalable performance.
+A machine learning project that predicts the winner of UFC fights using a **Gradient Boosting Classifier** with **66.09%** true symmetric accuracy. The model is served via a **RESTful API** built with **FastAPI**, containerized with **Docker**, and deployed on **AWS ECS** for scalable performance.
 
 ## 📑 Table of Contents
 - [✨ Features](#-features)
@@ -17,7 +17,8 @@ A machine learning project that predicts the winner of UFC fights using a **Logi
 * **Fight Winner Prediction:** Predicts the winner of a UFC match (Red or Blue corner).
 * **Automated Data Updates:** Includes a scraper (`update_dataset.py`) that pulls the latest fight results from [ufcstats.com](http://ufcstats.com) and appends them directly to the training dataset.
 * **Data-Driven:** Uses a comprehensive dataset of past UFC fights (`ufc-master.csv`) with 7,000+ fight records.
-* **Hyperparameter Tuned:** Model parameters optimised via GridSearchCV for best accuracy.
+* **Hyperparameter Tuned:** Model parameters optimized for tree depth, learning rate, and estimators to handle heavy target skew and prevent overfitting.
+* **Symmetrized Inference:** Ensures prediction impartiality by averaging the model's output across both corner assignments.
 * **Model Evaluation:** Includes model accuracy, a classification report, and a confusion matrix to evaluate performance.
 * **Containerized Deployment:** Packaged as a Docker container for easy portability and deployment.
 * **Cloud Deployment:** Successfully deployed and running on AWS ECS.
@@ -115,41 +116,31 @@ The model is trained on the `ufc-master.csv` dataset, which contains detailed st
 The dataset is kept up-to-date using the `update_dataset.py` scraper, which pulls the latest results from [ufcstats.com](http://ufcstats.com).
 
 ## 🤖 The Model
-This project uses a Logistic Regression model from the scikit-learn library to classify fight outcomes.
+This project uses a Gradient Boosting Classifier from the scikit-learn library to classify fight outcomes, replacing an earlier Logistic Regression approach.
 
-* **Data Preprocessing:** The model handles categorical features with one-hot encoding and scales numerical features using StandardScaler to ensure they are appropriately weighted.
+* **Data Preprocessing:** The model computes per-corner raw statistics (striking rates, takedown defense, age, reach, etc.) rather than simple differentials to capture non-linear relationships.
 
-* **Hyperparameter Tuning:** GridSearchCV was used to find the optimal parameters. The best configuration uses **Elastic Net regularisation** (`C=0.1`, `l1_ratio=0.5`) with the SAGA solver.
+* **Hyperparameter Tuning:** Tuned to handle skewed real-world target data (`max_depth=2`, `n_estimators=300`, `learning_rate=0.05`).
 
-* **Training:** The dataset is split into training (50%) and testing (50%) sets to train and then evaluate the model on unseen data.
+* **Symmetrized Inference:** To solve the inherent red-corner bias in historical UFC data, the API evaluates every fight twice (A vs B, and B vs A) and averages the probabilities.
 
-* **Evaluation:** The model's performance is measured using its accuracy score, a detailed classification report, and a confusion matrix.
+* **Training:** Evaluated on recent fights to ensure the model generalizes effectively against the heavily skewed baseline.
 
-### Current Results (Tuned Model — 50/50 split)
-```
---- Model Evaluation ---
-Model Accuracy: 0.6966
+### Current Results (Gradient Boosting — Symmetrized Evaluation)
+```text
+=== Model C: Per-corner features ===
+  Raw accuracy:  0.7433
+  Sym accuracy:  0.6609
+  Sym Brier:     0.2203
 
-Classification Report:
-              precision    recall  f1-score   support
-
-   Blue Wins       0.62      0.48      0.54      1343
-    Red Wins       0.73      0.83      0.77      2292
-
-    accuracy                           0.70      3635
-   macro avg       0.67      0.65      0.66      3635
-weighted avg       0.69      0.70      0.69      3635
-
-
-Confusion Matrix:
-[[ 640  703]
- [ 400 1892]]
-
-Confusion Matrix Interpretation:
-Correctly predicted 'Blue Wins': 640
-Incorrectly predicted 'Red Wins' (False Positive): 703
-Incorrectly predicted 'Blue Wins' (False Negative): 400
-Correctly predicted 'Red Wins': 1892
+============================================================
+SUMMARY
+============================================================
+  Model                                         Raw      Sym    Brier
+  Baseline (always Red)                      0.7900      N/A      N/A
+  A: GBM, diffs, no augmentation             0.7014   0.5216   0.2556
+  B: GBM, diffs, WITH augmentation           0.5381   0.5347   0.2510
+  C: GBM, per-corner features                0.7433   0.6609   0.2203
 ```
 
 ### Previous Results (Before Tuning)
