@@ -269,7 +269,9 @@ def run_update():
                 new_row['RedStance'] = red_stats['Stance']
                 new_row['RedCurrentWinStreak'] = red_stats['CurrentWinStreak']
                 new_row['RedCurrentLoseStreak'] = red_stats['CurrentLoseStreak']
+                new_row['RedWins'] = red_stats['Wins']
                 new_row['RedLosses'] = red_stats['Losses']
+                new_row['RedLongestWinStreak'] = red_stats['LongestWinStreak']
                 new_row['RedTotalRoundsFought'] = red_stats['TotalRoundsFought']
                 new_row['RedTotalTitleBouts'] = red_stats['TotalTitleBouts']
                 new_row['RedWinsByKO'] = red_stats['WinsByKO']
@@ -286,7 +288,9 @@ def run_update():
                 new_row['BlueStance'] = blue_stats['Stance']
                 new_row['BlueCurrentWinStreak'] = blue_stats['CurrentWinStreak']
                 new_row['BlueCurrentLoseStreak'] = blue_stats['CurrentLoseStreak']
+                new_row['BlueWins'] = blue_stats['Wins']
                 new_row['BlueLosses'] = blue_stats['Losses']
+                new_row['BlueLongestWinStreak'] = blue_stats['LongestWinStreak']
                 new_row['BlueTotalRoundsFought'] = blue_stats['TotalRoundsFought']
                 new_row['BlueTotalTitleBouts'] = blue_stats['TotalTitleBouts']
                 new_row['BlueWinsByKO'] = blue_stats['WinsByKO']
@@ -307,6 +311,11 @@ def run_update():
                 new_row['SubDif'] = red_stats['WinsBySubmission'] - blue_stats['WinsBySubmission']
                 new_row['AvgTDDif'] = red_stats['AvgTDLanded'] - blue_stats['AvgTDLanded']
                 new_row['AvgSubAttDif'] = red_stats['AvgSubAtt'] - blue_stats['AvgSubAtt']
+                new_row['AgeDif'] = (red_stats['Age'] or 0) - (blue_stats['Age'] or 0)
+                new_row['SigStrDif'] = red_stats['AvgSigStrLanded'] - blue_stats['AvgSigStrLanded']
+                new_row['WinDif'] = red_stats['Wins'] - blue_stats['Wins']
+                new_row['LoseStreakDif'] = red_stats['CurrentLoseStreak'] - blue_stats['CurrentLoseStreak']
+                new_row['LongestWinStreakDif'] = red_stats['LongestWinStreak'] - blue_stats['LongestWinStreak']
                 
                 new_rows.append(new_row)
                 
