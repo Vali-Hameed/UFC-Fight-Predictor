@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import difflib
 
 # ---  Making Predictions on Hypothetical Fights ---
@@ -18,18 +19,16 @@ def get_closest_fighter_name(fighter_name, dataframe):
 
 def get_latest_stats(fighter_name, dataframe):
     """Finds the most recent fight record for a given fighter."""
-    # Find all fights where the fighter was in either corner
     fighter_fights = dataframe[(dataframe['RedFighter'] == fighter_name) | (dataframe['BlueFighter'] == fighter_name)]
-
     if fighter_fights.empty:
         return None
-
-    # Return the row of the most recent fight
     return fighter_fights.sort_values(by='Date', ascending=False).iloc[0]
 
 def predict_hypothetical_fight(red_fighter_name, blue_fighter_name, model, dataframe, feature_cols):
-    """Predicts the outcome of a hypothetical fight using symmetric features."""
-    # Resolve names first to handle typos
+    """Predicts the outcome of a hypothetical fight using symmetrized inference over per-corner features."""
+    original_red = red_fighter_name
+    original_blue = blue_fighter_name
+    
     red_matched_name = get_closest_fighter_name(red_fighter_name, dataframe)
     blue_matched_name = get_closest_fighter_name(blue_fighter_name, dataframe)
 
@@ -52,85 +51,84 @@ def predict_hypothetical_fight(red_fighter_name, blue_fighter_name, model, dataf
     red_stats_row = get_latest_stats(red_fighter_name, dataframe)
     blue_stats_row = get_latest_stats(blue_fighter_name, dataframe)
 
-    if red_stats_row is None:
-        print(f"Could not find data for {red_fighter_name}")
-        return None
-    if blue_stats_row is None:
-        print(f"Could not find data for {blue_fighter_name}")
+    if red_stats_row is None or blue_stats_row is None:
+        print("Missing data for one or both fighters.")
         return None
 
-    # Determine which corner the fighter was in during their last fight to get correct stats
+    # Determine which corner each fighter was in during their last fight
     red_corner = 'Red' if red_stats_row['RedFighter'] == red_fighter_name else 'Blue'
     blue_corner = 'Red' if blue_stats_row['RedFighter'] == blue_fighter_name else 'Blue'
 
-    # Create a dictionary to hold the features for our hypothetical fight
-    hypothetical_fight_data = {}
+    def safe_val(row, col, default=0):
+        val = row.get(col)
+        if pd.isna(val):
+            return default
+        return float(val)
 
-    # --- Extract raw stats for each fighter ---
-    red_height = red_stats_row[f'{red_corner}HeightCms']
-    blue_height = blue_stats_row[f'{blue_corner}HeightCms']
-    red_reach = red_stats_row[f'{red_corner}ReachCms']
-    blue_reach = blue_stats_row[f'{blue_corner}ReachCms']
-    red_age = red_stats_row[f'{red_corner}Age']
-    blue_age = blue_stats_row[f'{blue_corner}Age']
+    fight_data = {}
 
-    # --- Calculate ALL difference features (Red - Blue) ---
-    # These are symmetric: swapping fighters just negates the values.
-    hypothetical_fight_data['HeightDif'] = red_height - blue_height
-    hypothetical_fight_data['ReachDif'] = red_reach - blue_reach
-    hypothetical_fight_data['AgeDif'] = red_age - blue_age
-    hypothetical_fight_data['WinStreakDif'] = red_stats_row[f'{red_corner}CurrentWinStreak'] - blue_stats_row[f'{blue_corner}CurrentWinStreak']
-    hypothetical_fight_data['LoseStreakDif'] = red_stats_row[f'{red_corner}CurrentLoseStreak'] - blue_stats_row[f'{blue_corner}CurrentLoseStreak']
-    hypothetical_fight_data['LongestWinStreakDif'] = red_stats_row[f'{red_corner}LongestWinStreak'] - blue_stats_row[f'{blue_corner}LongestWinStreak']
-    hypothetical_fight_data['WinDif'] = red_stats_row[f'{red_corner}Wins'] - blue_stats_row[f'{blue_corner}Wins']
-    hypothetical_fight_data['LossDif'] = red_stats_row[f'{red_corner}Losses'] - blue_stats_row[f'{blue_corner}Losses']
-    hypothetical_fight_data['TotalRoundDif'] = red_stats_row[f'{red_corner}TotalRoundsFought'] - blue_stats_row[f'{blue_corner}TotalRoundsFought']
-    hypothetical_fight_data['TotalTitleBoutDif'] = red_stats_row[f'{red_corner}TotalTitleBouts'] - blue_stats_row[f'{blue_corner}TotalTitleBouts']
-    hypothetical_fight_data['KODif'] = red_stats_row[f'{red_corner}WinsByKO'] - blue_stats_row[f'{blue_corner}WinsByKO']
-    hypothetical_fight_data['SubDif'] = red_stats_row[f'{red_corner}WinsBySubmission'] - blue_stats_row[f'{blue_corner}WinsBySubmission']
-    hypothetical_fight_data['SigStrDif'] = red_stats_row[f'{red_corner}AvgSigStrLanded'] - blue_stats_row[f'{blue_corner}AvgSigStrLanded']
-    hypothetical_fight_data['AvgSubAttDif'] = red_stats_row[f'{red_corner}AvgSubAtt'] - blue_stats_row[f'{blue_corner}AvgSubAtt']
-    hypothetical_fight_data['AvgTDDif'] = red_stats_row[f'{red_corner}AvgTDLanded'] - blue_stats_row[f'{blue_corner}AvgTDLanded']
+    # Map features for the requested Red fighter into the "Red..." feature columns
+    # and the requested Blue fighter into the "Blue..." feature columns
+    for stat in ['CurrentWinStreak', 'CurrentLoseStreak', 'TotalRoundsFought', 'TotalTitleBouts',
+                 'WinsByKO', 'WinsBySubmission', 'AvgSigStrLanded', 'AvgSubAtt', 'AvgTDLanded',
+                 'Age', 'HeightCms', 'ReachCms', 'Losses']:
+        fight_data[f'Red{stat}'] = safe_val(red_stats_row, f'{red_corner}{stat}')
+        fight_data[f'Blue{stat}'] = safe_val(blue_stats_row, f'{blue_corner}{stat}')
 
-    # --- Symmetric StanceMatchup ---
-    # Sort alphabetically so the matchup is the same regardless of corner assignment
-    red_stance = str(red_stats_row[f'{red_corner}Stance']) if pd.notna(red_stats_row[f'{red_corner}Stance']) else 'Unknown'
-    blue_stance = str(blue_stats_row[f'{blue_corner}Stance']) if pd.notna(blue_stats_row[f'{blue_corner}Stance']) else 'Unknown'
-    sorted_stances = sorted([red_stance, blue_stance])
-    hypothetical_fight_data['StanceMatchup'] = f"{sorted_stances[0]}_vs_{sorted_stances[1]}"
+    # Engineered features
+    for f_name, stats_row, corner, out_prefix in [
+        (red_fighter_name, red_stats_row, red_corner, 'Red'),
+        (blue_fighter_name, blue_stats_row, blue_corner, 'Blue')
+    ]:
+        ko = safe_val(stats_row, f'{corner}WinsByKO')
+        sub = safe_val(stats_row, f'{corner}WinsBySubmission')
+        wins = safe_val(stats_row, f'{corner}Wins')
+        losses = safe_val(stats_row, f'{corner}Losses')
+        draws = safe_val(stats_row, f'{corner}Draws')
+        
+        finish_wins = ko + sub
+        total_fights = (wins if wins > 0 else finish_wins) + losses + draws
+        finish_rate = finish_wins / total_fights if total_fights > 0 else 0
+        
+        fight_data[f'{out_prefix}TotalFights'] = total_fights
+        fight_data[f'{out_prefix}FinishRate'] = finish_rate
 
-    # Create a DataFrame from the dictionary, ensuring column order matches the model's training data
-    fight_df = pd.DataFrame([hypothetical_fight_data], columns=feature_cols)
+    # Ensure columns match model's expected features
+    fight_df = pd.DataFrame([fight_data], columns=feature_cols)
 
     # --- Symmetrized prediction ---
-    # Predict in BOTH directions and average to eliminate corner bias.
-    # Forward: fighter1=Red, fighter2=Blue (as constructed above)
-    # Reverse: negate all difference features (simulating swapped corners),
-    #          StanceMatchup stays the same (it's already corner-invariant)
+    # The model was trained on data where the Red corner is usually the favorite.
+    # To remove this bias for random website matchups, we predict both ways and average.
+    
+    # 1. Forward prediction: what if Red is Red, and Blue is Blue?
     forward_proba = model.predict_proba(fight_df)[0]  # [P(Blue), P(Red)]
 
-    # Build the reversed DataFrame: negate all numerical dif features
-    reversed_data = hypothetical_fight_data.copy()
-    for feat in feature_cols:
-        if feat != 'StanceMatchup':  # Don't negate the categorical feature
-            reversed_data[feat] = -reversed_data[feat]
+    # 2. Reverse prediction: what if Blue is Red, and Red is Blue?
+    reversed_data = fight_data.copy()
+    for col in feature_cols:
+        if col.startswith('Red'):
+            partner = col.replace('Red', 'Blue', 1)
+            if partner in feature_cols:
+                reversed_data[col], reversed_data[partner] = fight_data[partner], fight_data[col]
+    
     reversed_df = pd.DataFrame([reversed_data], columns=feature_cols)
     reverse_proba = model.predict_proba(reversed_df)[0]  # [P(Blue'), P(Red')]
 
-    # Average: forward P(Red wins) with reverse P(Blue wins) [which = P(Red wins in swapped frame)]
+    # Average: forward P(Red wins) with reverse P(Blue wins)
     red_win_prob = (forward_proba[1] + reverse_proba[0]) / 2.0
-    blue_win_prob = 1.0 - red_win_prob  # Ensures they sum to exactly 100%
+    blue_win_prob = 1.0 - red_win_prob
 
-    winner = red_fighter_name if red_win_prob > blue_win_prob else blue_fighter_name
+    winner = original_red if red_win_prob > blue_win_prob else original_blue
     
     print(f"Prediction Probabilities:")
-    print(f"  - {blue_fighter_name} (Blue) wins: {blue_win_prob:.2%}")
-    print(f"  - {red_fighter_name} (Red) wins: {red_win_prob:.2%}")
+    print(f"  - {original_blue} (Blue) wins: {blue_win_prob:.2%}")
+    print(f"  - {original_red} (Red) wins: {red_win_prob:.2%}")
     print(f"\nPredicted Winner: {winner}")
+    
     return {
         "predicted_winner": winner,
         "red_win_prob": float(red_win_prob),
         "blue_win_prob": float(blue_win_prob),
-        "red_fighter": red_fighter_name,
-        "blue_fighter": blue_fighter_name
+        "red_fighter": original_red,
+        "blue_fighter": original_blue
     }

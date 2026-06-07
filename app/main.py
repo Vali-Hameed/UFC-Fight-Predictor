@@ -4,7 +4,7 @@ import pickle
 from .ufc_predictor import predict_hypothetical_fight
 
 app = FastAPI(title="UFC Fight Predictor API")
-pickle_in = open('app/ufc_logistic_model.pkl', 'rb')
+pickle_in = open('app/ufc_gradient_boosting_model.pkl', 'rb')
 model = pickle.load(pickle_in)
 
 @app.get("/")
