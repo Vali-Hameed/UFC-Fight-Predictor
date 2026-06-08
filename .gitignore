@@ -2,7 +2,6 @@ venv/
 __pycache__/
 *.py[cod]
 *$py.class
-*.pkl
 
 # PyCharm / IDEs
 .idea/
