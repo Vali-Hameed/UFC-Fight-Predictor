@@ -11,6 +11,11 @@ model = pickle.load(pickle_in)
 def read_root():
     return {"message": "Welcome to the UFC Fight Predictor API! Use the /predict endpoint to get fight predictions."}
 
+@app.get("/health")
+@app.head("/health")
+def health_check():
+    return {"status": "ok"}
+
 
 @app.post("/predict")
 def predict(red_fighter_name: str, blue_fighter_name: str):
