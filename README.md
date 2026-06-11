@@ -1,6 +1,9 @@
 ![UFC Logo](https://upload.wikimedia.org/wikipedia/commons/9/92/UFC_Logo.svg)
 
 # 🥊 UFC Fight Predictor
+
+> **Note**: This repository houses the standalone Machine Learning microservice. For the core full-stack web application, visit the [UFC-Fight-Predictor-Website](https://github.com/Vali-Hameed/UFC-Fight-Predictor-Website) repository.
+
 A machine learning project that predicts the winner of UFC fights using a **Gradient Boosting Classifier** with **66.09%** true symmetric accuracy. The model is served via a **RESTful API** built with **FastAPI**, containerized with **Docker**, and deployed on **AWS ECS** for scalable performance.
 
 ## 📑 Table of Contents
@@ -55,7 +58,9 @@ python model.py
 ```
 
 ### Updating the Dataset
-To pull in the latest UFC fight results and append them to `ufc-master.csv`:
+> **Note:** While this repository contains a local `update_dataset.py` script for manual dataset backfills, the live production scraping is managed by a dedicated microservice. See the [UFC-Scraper](https://github.com/Vali-Hameed/UFC-Scraper) repository for details on the automated cron scraping architecture.
+
+To pull in the latest UFC fight results locally and append them to `ufc-master.csv`:
 ```
 cd app
 python update_dataset.py
@@ -75,7 +80,13 @@ To serve the model via the FastAPI application, run the following command from t
 ```
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
-You can then access the interactive API documentation at http://localhost:8000/docs.
+You can then access the interactive API documentation at http://localhost:8000/docs. 
+
+The primary endpoint is `POST /predict`, which accepts the following query parameters:
+- `red_fighter_name`: The name of the fighter in the red corner.
+- `blue_fighter_name`: The name of the fighter in the blue corner.
+
+It returns the predicted winner and the confidence probability score for each fighter.
 
 ## ☁️ Deployment
 
