@@ -59,31 +59,16 @@ jobs:
 
             echo "--- Activating Python Virtual Environment ---"
             source venv/bin/activate
-
-            echo "--- Ensuring required dependencies and browser libraries are installed ---"
             pip install -r requirements.txt
-            
-            # Check if required browser libraries exist on system
-            echo "--- Checking system browser libraries ---"
-            HAS_LIBS="false"
-            if ldconfig -p 2>/dev/null | grep -q "libatk-1.0"; then
-              HAS_LIBS="true"
-            fi
 
-            if [ "$HAS_LIBS" = "false" ]; then
-              echo ">>> Installing missing browser system libraries..."
-              sudo killall -9 apt apt-get 2>/dev/null || true
-              sudo rm -f /var/lib/apt/lists/lock /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend 2>/dev/null || true
-              sudo dpkg --configure -a 2>/dev/null || true
-              export DEBIAN_FRONTEND=noninteractive
-              sudo -E ./venv/bin/playwright install-deps chromium || true
-            else
-              echo ">>> Browser libraries are already present on system."
-            fi
-            playwright install chromium
+            echo "--- Scraping new UFC event data via Playwright container ---"
+            docker run --rm \
+              -v /home/ubuntu/UFC-Fight-Predictor/app:/app \
+              -w /app \
+              mcr.microsoft.com/playwright/python:v1.42.0-jammy \
+              bash -c "pip install --no-cache-dir -q beautifulsoup4 pandas && python update_dataset.py"
 
-            echo "--- Checking for new UFC event data ---"
-            python app/update_dataset.py
+            sudo chown -R $(id -u):$(id -g) /home/ubuntu/UFC-Fight-Predictor/app
 
             # Check if ufc-master.csv has changed
             HAS_CHANGES=$(git status --porcelain app/ufc-master.csv || true)
