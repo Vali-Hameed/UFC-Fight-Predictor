@@ -120,8 +120,9 @@ jobs:
         env:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
         run: |
-          if [ -n "$KAGGLE_USERNAME" ] && [ -n "$KAGGLE_KEY" ]; then
+          if [ -n "$KAGGLE_API_TOKEN" ] || [ -n "$KAGGLE_KEY" ] || ([ -n "$KAGGLE_USERNAME" ] && [ -n "$KAGGLE_KEY" ]); then
             echo "enabled=true" >> $GITHUB_OUTPUT
             echo "Kaggle secrets configured. Proceeding with Kaggle sync."
           else
@@ -165,10 +166,33 @@ jobs:
       - name: Upload new version to Kaggle
         if: steps.kaggle-check.outputs.enabled == 'true' && steps.change-check.outputs.should_upload == 'true'
         env:
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN || secrets.KAGGLE_KEY }}
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
           KAGGLE_DATASET_ID: ${{ secrets.KAGGLE_DATASET_ID || vars.KAGGLE_DATASET_ID || 'valihameed/ufc-fight-data' }}
         run: |
+          echo "Setting up Kaggle credentials..."
+          mkdir -p ~/.kaggle
+
+          # Configure token for modern Kaggle CLI (Option A: env var, Option B: access_token file)
+          TOKEN="${KAGGLE_API_TOKEN:-$KAGGLE_KEY}"
+          if [ -n "$TOKEN" ]; then
+            export KAGGLE_API_TOKEN="$TOKEN"
+            echo "$TOKEN" > ~/.kaggle/access_token
+          fi
+
+          # Also configure legacy ~/.kaggle/kaggle.json if username and key are provided
+          if [ -n "$KAGGLE_USERNAME" ] && [ -n "$KAGGLE_KEY" ]; then
+            cat <<EOF > ~/.kaggle/kaggle.json
+          {
+            "username": "${KAGGLE_USERNAME}",
+            "key": "${KAGGLE_KEY}"
+          }
+          EOF
+          fi
+
+          chmod -R 600 ~/.kaggle/
+
           echo "Packaging dataset for Kaggle upload..."
           mkdir -p kaggle_pkg
           cp app/ufc-master.csv kaggle_pkg/
@@ -187,3 +211,4 @@ jobs:
 
           echo "Publishing new dataset version to Kaggle (${KAGGLE_DATASET_ID})..."
           kaggle datasets version -p kaggle_pkg -m "Auto-update after completed UFC event (${{ inputs.event_name || 'automated' }})" --dir-mode zip || echo "Kaggle upload failed or dataset not found. Verify KAGGLE_DATASET_ID in Kaggle."
+
