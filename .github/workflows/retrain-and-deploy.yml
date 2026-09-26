@@ -198,7 +198,9 @@ jobs:
           EOF
           fi
 
-          chmod -R 600 ~/.kaggle/
+          chmod 700 ~/.kaggle
+          [ -f ~/.kaggle/access_token ] && chmod 600 ~/.kaggle/access_token
+          [ -f ~/.kaggle/kaggle.json ] && chmod 600 ~/.kaggle/kaggle.json
 
           echo "Packaging dataset for Kaggle upload..."
           mkdir -p kaggle_pkg
