@@ -60,6 +60,10 @@ jobs:
             echo "--- Activating Python Virtual Environment ---"
             source venv/bin/activate
 
+            echo "--- Ensuring required dependencies are installed ---"
+            pip install -r requirements.txt
+            playwright install chromium || true
+
             echo "--- Checking for new UFC event data ---"
             python app/update_dataset.py
 
