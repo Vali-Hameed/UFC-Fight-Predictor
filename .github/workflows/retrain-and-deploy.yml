@@ -63,19 +63,24 @@ jobs:
             echo "--- Ensuring required dependencies and browser libraries are installed ---"
             pip install -r requirements.txt
             
-            # Check if Playwright Chromium can already launch to avoid apt completely
-            echo "--- Checking Playwright Chromium runtime ---"
-            if python -c "from playwright.sync_api import sync_playwright; p = sync_playwright().start(); b = p.chromium.launch(headless=True, args=['--no-sandbox']); b.close(); p.stop()" 2>/dev/null; then
-              echo ">>> Playwright Chromium is working. Skipping package installation."
-            else
-              echo ">>> Missing browser libraries. Cleaning any stuck locks and installing..."
-              sudo killall apt apt-get 2>/dev/null || true
+            # Check if required browser libraries exist on system
+            echo "--- Checking system browser libraries ---"
+            HAS_LIBS="false"
+            if ldconfig -p 2>/dev/null | grep -q "libatk-1.0"; then
+              HAS_LIBS="true"
+            fi
+
+            if [ "$HAS_LIBS" = "false" ]; then
+              echo ">>> Installing missing browser system libraries..."
+              sudo killall -9 apt apt-get 2>/dev/null || true
               sudo rm -f /var/lib/apt/lists/lock /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend 2>/dev/null || true
               sudo dpkg --configure -a 2>/dev/null || true
               export DEBIAN_FRONTEND=noninteractive
               sudo -E ./venv/bin/playwright install-deps chromium || true
-              playwright install chromium
+            else
+              echo ">>> Browser libraries are already present on system."
             fi
+            playwright install chromium
 
             echo "--- Checking for new UFC event data ---"
             python app/update_dataset.py
