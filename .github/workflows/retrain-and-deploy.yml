@@ -66,7 +66,7 @@ jobs:
               -v /home/ubuntu/UFC-Fight-Predictor/app:/app \
               -w /app \
               mcr.microsoft.com/playwright/python:v1.42.0-jammy \
-              bash -c "pip install --no-cache-dir -q beautifulsoup4 pandas && python update_dataset.py"
+              bash -c "pip install --no-cache-dir -q playwright==1.42.0 beautifulsoup4 pandas && python3 update_dataset.py"
 
             sudo chown -R $(id -u):$(id -g) /home/ubuntu/UFC-Fight-Predictor/app
 
