@@ -24,6 +24,9 @@ concurrency:
   group: ufc-ml-retrain
   cancel-in-progress: false
 
+permissions:
+  contents: write
+
 jobs:
   retrain-and-deploy:
     name: Retrain & Deploy on Oracle VPS
@@ -35,11 +38,13 @@ jobs:
           TRIGGER_SOURCE: ${{ inputs.trigger_source || 'schedule' }}
           EVENT_NAME: ${{ inputs.event_name || 'Scheduled/API' }}
           FORCE_RETRAIN: ${{ inputs.force_retrain || false }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: TRIGGER_SOURCE,EVENT_NAME,FORCE_RETRAIN
+          envs: TRIGGER_SOURCE,EVENT_NAME,FORCE_RETRAIN,GH_TOKEN
+          command_timeout: 30m
           script_stop: true
           script: |
             set -e
@@ -53,6 +58,7 @@ jobs:
             cd /home/ubuntu/UFC-Fight-Predictor
 
             echo "--- Synchronizing repository with main branch ---"
+            git config --global --add safe.directory /home/ubuntu/UFC-Fight-Predictor
             git fetch --all
             git reset --hard origin/main
             git pull origin main
@@ -84,8 +90,13 @@ jobs:
               git config user.email "github-actions[bot]@users.noreply.github.com"
 
               git add app/ufc-master.csv app/ufc_gradient_boosting_model.pkl app/ufc_other_artifacts.pkl
-              git commit -m "[skip ci] Auto-update dataset and model after completed event (${EVENT_NAME})" || echo "No changes to commit"
-              git push origin main || echo "Git push skipped"
+              if ! git diff --cached --quiet; then
+                git commit -m "[skip ci] Auto-update dataset and model after completed event (${EVENT_NAME})"
+                echo "--- Pushing updated dataset and model to GitHub ---"
+                git push "https://x-access-token:${GH_TOKEN}@github.com/Vali-Hameed/UFC-Fight-Predictor.git" HEAD:main
+              else
+                echo "No changes staged to commit."
+              fi
 
               echo "--- Rebuilding & restarting Docker container ---"
               docker compose up -d --build
