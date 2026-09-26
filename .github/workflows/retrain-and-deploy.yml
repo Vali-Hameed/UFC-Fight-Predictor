@@ -1,0 +1,170 @@
+name: Retrain and Deploy ML Model
+
+on:
+  workflow_dispatch:
+    inputs:
+      trigger_source:
+        description: 'Source that triggered retraining (e.g. backend_completion, manual)'
+        required: false
+        default: 'manual'
+      event_name:
+        description: 'UFC Event Name'
+        required: false
+        default: 'Manual/Scheduled Trigger'
+      force_retrain:
+        description: 'Force retraining even if no new fights are detected'
+        type: boolean
+        required: false
+        default: false
+  schedule:
+    # Run Sunday and Monday mornings at 06:00 UTC (after Saturday UFC events finish)
+    - cron: '0 6 * * 0,1'
+
+concurrency:
+  group: ufc-ml-retrain
+  cancel-in-progress: false
+
+jobs:
+  retrain-and-deploy:
+    name: Retrain & Deploy on Oracle VPS
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH to Oracle VPS and execute pipeline
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          TRIGGER_SOURCE: ${{ inputs.trigger_source || 'schedule' }}
+          EVENT_NAME: ${{ inputs.event_name || 'Scheduled/API' }}
+          FORCE_RETRAIN: ${{ inputs.force_retrain || false }}
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: TRIGGER_SOURCE,EVENT_NAME,FORCE_RETRAIN
+          script_stop: true
+          script: |
+            set -e
+            echo "=========================================================="
+            echo "  UFC ML Auto-Retrain & Deploy Pipeline"
+            echo "  Trigger Source : ${TRIGGER_SOURCE}"
+            echo "  Event Name     : ${EVENT_NAME}"
+            echo "  Force Retrain  : ${FORCE_RETRAIN}"
+            echo "=========================================================="
+
+            cd /home/ubuntu/UFC-Fight-Predictor
+
+            echo "--- Synchronizing repository with main branch ---"
+            git fetch --all
+            git reset --hard origin/main
+            git pull origin main
+
+            echo "--- Activating Python Virtual Environment ---"
+            source venv/bin/activate
+
+            echo "--- Checking for new UFC event data ---"
+            python app/update_dataset.py
+
+            # Check if ufc-master.csv has changed
+            HAS_CHANGES=$(git status --porcelain app/ufc-master.csv || true)
+
+            if [ -n "$HAS_CHANGES" ] || [ "${FORCE_RETRAIN}" = "true" ]; then
+              echo ">>> New event data detected or force retrain requested. Starting retraining..."
+              python app/model.py
+              echo ">>> Model training finished successfully."
+
+              echo "--- Committing updated dataset and model to Git ---"
+              git config user.name "github-actions[bot]"
+              git config user.email "github-actions[bot]@users.noreply.github.com"
+
+              git add app/ufc-master.csv app/ufc_gradient_boosting_model.pkl app/ufc_other_artifacts.pkl
+              git commit -m "[skip ci] Auto-update dataset and model after completed event (${EVENT_NAME})" || echo "No changes to commit"
+              git push origin main || echo "Git push skipped"
+
+              echo "--- Rebuilding & restarting Docker container ---"
+              docker compose up -d --build
+
+              echo "--- Verifying API health ---"
+              sleep 5
+              curl -f http://localhost:8000/health || (echo "Health check failed!" && exit 1)
+              echo ">>> Pipeline completed successfully. Container is live with new model!"
+            else
+              echo ">>> Dataset is already up to date. No new fights found to train on."
+            fi
+
+  update-kaggle:
+    name: Sync Dataset to Kaggle
+    needs: retrain-and-deploy
+    runs-on: ubuntu-latest
+    if: always() && needs.retrain-and-deploy.result == 'success'
+    steps:
+      - name: Check Kaggle credentials
+        id: kaggle-check
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          if [ -n "$KAGGLE_USERNAME" ] && [ -n "$KAGGLE_KEY" ]; then
+            echo "enabled=true" >> $GITHUB_OUTPUT
+            echo "Kaggle secrets configured. Proceeding with Kaggle sync."
+          else
+            echo "enabled=false" >> $GITHUB_OUTPUT
+            echo "Kaggle credentials not found in repository secrets. Skipping Kaggle sync."
+          fi
+
+      - name: Checkout latest main
+        if: steps.kaggle-check.outputs.enabled == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 5
+
+      - name: Check if dataset was updated recently
+        id: change-check
+        if: steps.kaggle-check.outputs.enabled == 'true'
+        run: |
+          # If the last commit touched ufc-master.csv or force_retrain is true
+          LAST_COMMIT_DIFF=$(git diff --name-only HEAD~1 HEAD | grep "app/ufc-master.csv" || true)
+          FORCE="${{ inputs.force_retrain || false }}"
+
+          if [ -n "$LAST_COMMIT_DIFF" ] || [ "$FORCE" = "true" ]; then
+            echo "should_upload=true" >> $GITHUB_OUTPUT
+            echo "Dataset changed in latest commit or force upload enabled."
+          else
+            echo "should_upload=false" >> $GITHUB_OUTPUT
+            echo "No recent dataset changes detected. Skipping upload to Kaggle."
+          fi
+
+      - name: Set up Python
+        if: steps.kaggle-check.outputs.enabled == 'true' && steps.change-check.outputs.should_upload == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Kaggle CLI
+        if: steps.kaggle-check.outputs.enabled == 'true' && steps.change-check.outputs.should_upload == 'true'
+        run: pip install kaggle
+
+      - name: Upload new version to Kaggle
+        if: steps.kaggle-check.outputs.enabled == 'true' && steps.change-check.outputs.should_upload == 'true'
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+          KAGGLE_DATASET_ID: ${{ secrets.KAGGLE_DATASET_ID || vars.KAGGLE_DATASET_ID || 'valihameed/ufc-fight-data' }}
+        run: |
+          echo "Packaging dataset for Kaggle upload..."
+          mkdir -p kaggle_pkg
+          cp app/ufc-master.csv kaggle_pkg/
+
+          cat <<EOF > kaggle_pkg/dataset-metadata.json
+          {
+            "title": "UFC Fight Data Master Dataset",
+            "id": "${KAGGLE_DATASET_ID}",
+            "licenses": [
+              {
+                "name": "CC0-1.0"
+              }
+            ]
+          }
+          EOF
+
+          echo "Publishing new dataset version to Kaggle (${KAGGLE_DATASET_ID})..."
+          kaggle datasets version -p kaggle_pkg -m "Auto-update after completed UFC event (${{ inputs.event_name || 'automated' }})" --dir-mode zip || echo "Kaggle upload failed or dataset not found. Verify KAGGLE_DATASET_ID in Kaggle."
