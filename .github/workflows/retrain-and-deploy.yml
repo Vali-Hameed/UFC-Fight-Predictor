@@ -63,16 +63,19 @@ jobs:
             echo "--- Ensuring required dependencies and browser libraries are installed ---"
             pip install -r requirements.txt
             
-            # Wait for background apt processes (such as Ubuntu unattended-upgrades) to release lock
-            echo "Checking system package locks..."
-            while sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do
-              echo "Apt is currently locked by a background process. Waiting 5s..."
-              sleep 5
-            done
-
-            export DEBIAN_FRONTEND=noninteractive
-            sudo -E ./venv/bin/playwright install-deps chromium
-            playwright install chromium
+            # Check if Playwright Chromium can already launch to avoid apt completely
+            echo "--- Checking Playwright Chromium runtime ---"
+            if python -c "from playwright.sync_api import sync_playwright; p = sync_playwright().start(); b = p.chromium.launch(headless=True, args=['--no-sandbox']); b.close(); p.stop()" 2>/dev/null; then
+              echo ">>> Playwright Chromium is working. Skipping package installation."
+            else
+              echo ">>> Missing browser libraries. Cleaning any stuck locks and installing..."
+              sudo killall apt apt-get 2>/dev/null || true
+              sudo rm -f /var/lib/apt/lists/lock /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend 2>/dev/null || true
+              sudo dpkg --configure -a 2>/dev/null || true
+              export DEBIAN_FRONTEND=noninteractive
+              sudo -E ./venv/bin/playwright install-deps chromium || true
+              playwright install chromium
+            fi
 
             echo "--- Checking for new UFC event data ---"
             python app/update_dataset.py
