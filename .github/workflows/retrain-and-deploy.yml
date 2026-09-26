@@ -62,8 +62,16 @@ jobs:
 
             echo "--- Ensuring required dependencies and browser libraries are installed ---"
             pip install -r requirements.txt
+            
+            # Wait for background apt processes (such as Ubuntu unattended-upgrades) to release lock
+            echo "Checking system package locks..."
+            while sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do
+              echo "Apt is currently locked by a background process. Waiting 5s..."
+              sleep 5
+            done
+
             export DEBIAN_FRONTEND=noninteractive
-            sudo ./venv/bin/playwright install-deps chromium || sudo playwright install-deps chromium || true
+            sudo -E ./venv/bin/playwright install-deps chromium
             playwright install chromium
 
             echo "--- Checking for new UFC event data ---"
