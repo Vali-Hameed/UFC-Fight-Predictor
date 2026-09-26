@@ -9,11 +9,18 @@ import pickle
 import pandas as pd
 import numpy as np
 
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CSV_PATH = os.path.join(BASE_DIR, 'ufc-master.csv')
+MODEL_PATH = os.path.join(BASE_DIR, 'ufc_gradient_boosting_model.pkl')
+ARTIFACTS_PATH = os.path.join(BASE_DIR, 'ufc_other_artifacts.pkl')
+
 try:
-    df = pd.read_csv('ufc-master.csv')
+    df = pd.read_csv(CSV_PATH)
 except FileNotFoundError:
-    print("Error: 'ufc-master.csv' not found. Please ensure the file is in the correct directory.")
-    exit()
+    print(f"Error: '{CSV_PATH}' not found. Please ensure the file is in the correct directory.")
+    exit(1)
 
 df['Date'] = pd.to_datetime(df['Date'])
 df = df.sort_values(by='Date').reset_index(drop=True)
@@ -103,10 +110,10 @@ other_artifacts = {
     "categorical_features": [], # Removed stance
     "data_for_lookups": df
 }
-with open('ufc_gradient_boosting_model.pkl', 'wb') as f_model:
+with open(MODEL_PATH, 'wb') as f_model:
     pickle.dump(tModel, f_model)
 
-with open('ufc_other_artifacts.pkl', 'wb') as f_artifacts:
+with open(ARTIFACTS_PATH, 'wb') as f_artifacts:
     pickle.dump(other_artifacts, f_artifacts)
 
 # ---  Evaluating the Model ---

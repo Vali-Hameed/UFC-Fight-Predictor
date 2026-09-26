@@ -5,7 +5,8 @@ from datetime import datetime
 import os
 import re
 
-CSV_FILE = 'ufc-master.csv'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CSV_FILE = os.path.join(BASE_DIR, 'ufc-master.csv')
 
 def convert_height(height_str):
     if not height_str or "--" in height_str:
@@ -211,8 +212,9 @@ def run_update():
         
         if not events:
             print("No new events found to append. The CSV is up to date!")
+            print("STATUS_NEW_DATA=false")
             browser.close()
-            return
+            return False
             
         print(f"Found {len(events)} new events to process.")
         
@@ -327,6 +329,16 @@ def run_update():
         new_df = new_df[columns] # Ensure column order matches exactly
         new_df.to_csv(CSV_FILE, mode='a', header=False, index=False)
         print("Done!")
+        print("STATUS_NEW_DATA=true")
+        return True
+    else:
+        print("No new rows generated.")
+        print("STATUS_NEW_DATA=false")
+        return False
 
 if __name__ == "__main__":
-    run_update()
+    updated = run_update()
+    if updated:
+        print("UPDATE_RESULT: SUCCESS_NEW_DATA")
+    else:
+        print("UPDATE_RESULT: NO_NEW_DATA")
