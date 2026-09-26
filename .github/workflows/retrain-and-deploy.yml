@@ -16,6 +16,11 @@ on:
         type: boolean
         required: false
         default: false
+      sync_kaggle_only:
+        description: 'Skip VPS retrain and immediately sync current dataset to Kaggle'
+        type: boolean
+        required: false
+        default: false
   schedule:
     # Run Sunday and Monday mornings at 06:00 UTC (after Saturday UFC events finish)
     - cron: '0 6 * * 0,1'
@@ -30,6 +35,7 @@ permissions:
 jobs:
   retrain-and-deploy:
     name: Retrain & Deploy on Oracle VPS
+    if: ${{ !inputs.sync_kaggle_only }}
     runs-on: ubuntu-latest
     steps:
       - name: SSH to Oracle VPS and execute pipeline
@@ -113,7 +119,7 @@ jobs:
     name: Sync Dataset to Kaggle
     needs: retrain-and-deploy
     runs-on: ubuntu-latest
-    if: always() && needs.retrain-and-deploy.result == 'success'
+    if: always() && (needs.retrain-and-deploy.result == 'success' || needs.retrain-and-deploy.result == 'skipped')
     steps:
       - name: Check Kaggle credentials
         id: kaggle-check
@@ -141,13 +147,14 @@ jobs:
         id: change-check
         if: steps.kaggle-check.outputs.enabled == 'true'
         run: |
-          # If the last commit touched ufc-master.csv or force_retrain is true
+          # If the last commit touched ufc-master.csv or force_retrain / sync_kaggle_only is true
           LAST_COMMIT_DIFF=$(git diff --name-only HEAD~1 HEAD | grep "app/ufc-master.csv" || true)
           FORCE="${{ inputs.force_retrain || false }}"
+          KAGGLE_ONLY="${{ inputs.sync_kaggle_only || false }}"
 
-          if [ -n "$LAST_COMMIT_DIFF" ] || [ "$FORCE" = "true" ]; then
+          if [ -n "$LAST_COMMIT_DIFF" ] || [ "$FORCE" = "true" ] || [ "$KAGGLE_ONLY" = "true" ]; then
             echo "should_upload=true" >> $GITHUB_OUTPUT
-            echo "Dataset changed in latest commit or force upload enabled."
+            echo "Dataset changed or force/kaggle-only upload enabled."
           else
             echo "should_upload=false" >> $GITHUB_OUTPUT
             echo "No recent dataset changes detected. Skipping upload to Kaggle."
