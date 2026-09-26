@@ -175,7 +175,10 @@ def run_update():
     columns = df.columns.tolist()
     
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(
+            headless=True,
+            args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+        )
         page = browser.new_page()
         
         # Scrape completed events
