@@ -2,8 +2,13 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
 from datetime import datetime
+import sys
 import os
 import re
+
+# Ensure all prints are flushed immediately to stdout
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(line_buffering=True)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CSV_FILE = os.path.join(BASE_DIR, 'ufc-master.csv')
@@ -182,8 +187,10 @@ def run_update():
         page = browser.new_page()
         
         # Scrape completed events
+        print("Navigating to ufcstats.com/statistics/events/completed...", flush=True)
         page.goto("http://ufcstats.com/statistics/events/completed?page=all")
         page.wait_for_selector('.b-statistics__table-events', timeout=30000)
+        print("Events list loaded successfully. Parsing completed events...", flush=True)
         soup = BeautifulSoup(page.content(), 'html.parser')
         
         events = []

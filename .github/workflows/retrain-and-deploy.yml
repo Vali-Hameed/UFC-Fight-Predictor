@@ -63,10 +63,11 @@ jobs:
 
             echo "--- Scraping new UFC event data via Playwright container ---"
             docker run --rm \
+              -e PYTHONUNBUFFERED=1 \
               -v /home/ubuntu/UFC-Fight-Predictor/app:/app \
               -w /app \
               mcr.microsoft.com/playwright/python:v1.42.0-jammy \
-              bash -c "pip install --no-cache-dir -q playwright==1.42.0 beautifulsoup4 pandas && python3 update_dataset.py"
+              bash -c "pip install --no-cache-dir --disable-pip-version-check --root-user-action=ignore -q playwright==1.42.0 beautifulsoup4 pandas && python3 -u update_dataset.py"
 
             sudo chown -R $(id -u):$(id -g) /home/ubuntu/UFC-Fight-Predictor/app
 
