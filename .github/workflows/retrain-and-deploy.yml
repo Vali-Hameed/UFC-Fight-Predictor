@@ -45,11 +45,13 @@ jobs:
           EVENT_NAME: ${{ inputs.event_name || 'Scheduled/API' }}
           FORCE_RETRAIN: ${{ inputs.force_retrain || false }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_AUTHOR_NAME: ${{ vars.GIT_AUTHOR_NAME || 'Vali-Hameed' }}
+          GIT_AUTHOR_EMAIL: ${{ vars.GIT_AUTHOR_EMAIL || 'valihameed88@gmail.com' }}
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: TRIGGER_SOURCE,EVENT_NAME,FORCE_RETRAIN,GH_TOKEN
+          envs: TRIGGER_SOURCE,EVENT_NAME,FORCE_RETRAIN,GH_TOKEN,GIT_AUTHOR_NAME,GIT_AUTHOR_EMAIL
           command_timeout: 30m
           script_stop: true
           script: |
@@ -92,8 +94,8 @@ jobs:
               echo ">>> Model training finished successfully."
 
               echo "--- Committing updated dataset and model to Git ---"
-              git config user.name "github-actions[bot]"
-              git config user.email "github-actions[bot]@users.noreply.github.com"
+              git config user.name "${GIT_AUTHOR_NAME}"
+              git config user.email "${GIT_AUTHOR_EMAIL}"
 
               git add app/ufc-master.csv app/ufc_gradient_boosting_model.pkl app/ufc_other_artifacts.pkl
               if ! git diff --cached --quiet; then
