@@ -21,9 +21,6 @@ on:
         type: boolean
         required: false
         default: false
-  schedule:
-    # Run Sunday and Monday mornings at 06:00 UTC (after Saturday UFC events finish)
-    - cron: '0 6 * * 0,1'
 
 concurrency:
   group: ufc-ml-retrain
