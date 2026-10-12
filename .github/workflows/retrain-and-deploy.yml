@@ -205,17 +205,14 @@ jobs:
           mkdir -p kaggle_pkg
           cp app/ufc-master.csv kaggle_pkg/
 
-          cat <<EOF > kaggle_pkg/dataset-metadata.json
-          {
-            "title": "UFC Fight Data Master Dataset",
-            "id": "${KAGGLE_DATASET_ID}",
-            "licenses": [
-              {
-                "name": "CC0-1.0"
-              }
-            ]
-          }
-          EOF
+          # Copy version-controlled metadata including tags/keywords
+          cp app/dataset-metadata.json kaggle_pkg/dataset-metadata.json
+          if [ -n "$KAGGLE_DATASET_ID" ]; then
+            python3 -c "import json, os; p='kaggle_pkg/dataset-metadata.json'; m=json.load(open(p)); m['id']=os.environ['KAGGLE_DATASET_ID']; json.dump(m, open(p, 'w'), indent=2)"
+          fi
+
+          echo "Dataset metadata configuration:"
+          cat kaggle_pkg/dataset-metadata.json
 
           echo "Publishing new dataset version to Kaggle (${KAGGLE_DATASET_ID})..."
           kaggle datasets version -p kaggle_pkg -m "Auto-update after completed UFC event (${{ inputs.event_name || 'automated' }})" --dir-mode zip || echo "Kaggle upload failed or dataset not found. Verify KAGGLE_DATASET_ID in Kaggle."
